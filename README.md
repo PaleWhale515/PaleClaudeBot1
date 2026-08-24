@@ -56,38 +56,57 @@ tests/test_desk.py
 
 ```bash
 pip install -r requirements.txt
-python3 run_desk.py                       # sample universe
-python3 run_desk.py --universe AAPL TSLA  # custom tickers
+python3 run_desk.py                                    # sample universe, mock data
+python3 run_desk.py --universe AAPL TSLA NVDA           # custom tickers, mock data
+python3 run_desk.py --provider yfinance --universe AAPL TSLA NVDA   # real data
 python3 -m pytest -q
 ```
 
-Everything runs today against `MockDataProvider`, which generates
+By default everything runs against `MockDataProvider`, which generates
 deterministic sample data so the pipeline is runnable and testable with no
-external accounts.
+external accounts. Pass `--provider yfinance` to pull real market data
+instead (see below).
 
-## Wiring up real data
+## The yfinance provider
 
-Nothing in `stockdesk/agents/` talks to the mock provider directly — every
-agent depends only on the `MarketDataProvider` interface in
-`stockdesk/data/base.py`. To go from sample data to something real,
-implement that interface once:
+`stockdesk/data/yfinance_provider.py` implements `MarketDataProvider` on
+top of [`yfinance`](https://github.com/ranaroussi/yfinance) (an unofficial
+Yahoo Finance client — free, no API key, but also unofficial: Yahoo can
+change its schema or rate-limit you without notice). It needs no
+credentials, just `pip install -r requirements.txt`.
 
-- **Prices/technicals** (`get_market_snapshot`, `get_universe`) — a market
-  data API such as Alpaca's or `yfinance`.
-- **Fundamentals** (`get_fundamentals`) — a fundamentals API, or your
-  broker's own data if it exposes one.
-- **Institutional/insider activity** (`get_institutional_activity`) — SEC
-  EDGAR's 13F and Form 4 filings (both public, free, and exactly the data
-  the crypto desk's "whale tracking" is a shadow of).
-- **News sentiment** (`get_news_sentiment`) — any headline/news API,
-  scored with a sentiment model of your choice.
-- **Risk events** (`get_risk_events`) — exchange halt feeds, analyst
-  rating-change feeds, SEC 8-K filings.
-- **Open positions** (`get_open_positions`) — your brokerage's account API
-  or a local ledger file.
+```bash
+python3 run_desk.py --provider yfinance --universe AAPL MSFT NVDA TSLA
+```
 
-None of this requires code changes to `orchestrator.py` or any agent — swap
-`MockDataProvider` for your real implementation in `run_desk.py` and the
-whole pipeline runs on live data. Order placement, if you ever want it,
-belongs in a new, explicitly-reviewed module — it is intentionally not part
-of this pipeline.
+**What's real vs. approximated**, so you know what to trust:
+
+| Field | Source | Note |
+|---|---|---|
+| Price, volume, SMA/RSI/ATR | `Ticker.history()` | Computed directly from real OHLCV data. |
+| Market cap, sector, beta, short interest | `Ticker.get_info()` | Real, but Yahoo's `info` dict is inconsistently populated — missing fields default to 0 / "Unknown" rather than crashing the run. |
+| Next earnings date | `Ticker.calendar` | Real when Yahoo has it; `None` otherwise (RISK's earnings-blackout check is then simply skipped for that ticker). |
+| Insider buy/sell counts (90d) | `Ticker.insider_transactions` | Real Form 4 data. |
+| **Institutional ownership change %** | — | **Not real.** yfinance only exposes a current-snapshot ownership %, not the quarter-over-quarter delta a 13F feed gives you. Always reported as `0.0` (neutral) — wire in SEC EDGAR's 13F filings if you want this field to mean something. |
+| News sentiment | `Ticker.news` + a keyword lexicon | Real headlines, but sentiment scoring is a crude positive/negative word count, not a trained model — directional at best. |
+| Risk events | `Ticker.upgrades_downgrades` | Only covers analyst downgrades. **No halt feed** — GUARDIAN will never flag a halt through this provider, so an empty result there is not "no risk," it's "not checked." |
+| Open positions | a local JSON ledger (`--positions-file`) | yfinance has no brokerage access; point this at a file shaped like `[{"ticker": "AAPL", "shares": 10, "entry_price": 180.0, "entry_date": "2026-01-15"}]`. |
+
+This sandbox's own network policy currently blocks `finance.yahoo.com`
+(outbound access is controlled per-environment — see the Claude Code on
+the web docs), so the provider is covered by tests against a fake
+`yfinance.Ticker` (`tests/test_yfinance_provider.py`) rather than a live
+call. Run it against a network that can actually reach Yahoo before relying
+on its output.
+
+## Wiring up other data sources
+
+Nothing in `stockdesk/agents/` talks to a specific provider directly —
+every agent depends only on the `MarketDataProvider` interface in
+`stockdesk/data/base.py`. To fill the yfinance provider's gaps above (real
+13F deltas, halt feeds, a proper sentiment model) or swap to a paid data
+vendor or broker API (e.g. Alpaca), implement that interface once and pass
+your provider to `run_desk()` — no changes needed to `orchestrator.py` or
+any agent. Order placement, if you ever want it, belongs in a new,
+explicitly-reviewed module — it is intentionally not part of this
+pipeline.
