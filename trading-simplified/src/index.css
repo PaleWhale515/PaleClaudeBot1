@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { color-scheme: dark; }
+  body {
+    font-feature-settings: 'cv11', 'ss01';
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(245, 165, 36, 0.05), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(56, 189, 248, 0.04), transparent 60%),
+      #07090d;
+    min-height: 100vh;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-xl border border-ink-700/80 bg-ink-900/80 backdrop-blur-sm;
+  }
+  .panel-header {
+    @apply flex items-center justify-between border-b border-ink-700/80 px-4 py-3;
+  }
+  .label {
+    @apply font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-400;
+  }
+  .btn-exec:disabled {
+    @apply cursor-not-allowed opacity-40 grayscale;
+  }
+}
+
+/* number input spinners off — we ship our own steppers */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; }
