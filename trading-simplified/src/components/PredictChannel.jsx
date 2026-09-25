@@ -37,11 +37,9 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
   const insufficient = balance < PREDICT_STAKE;
   const disabled = killSwitch || insufficient;
 
-  const share = () => {
-    const text = `Pulse Snapshot: ${market.title} Market says ${Math.round(upPrice * 100)}% UP right now. #TradingSimplified\n\nMarket data only, not advice. Event contracts involve risk of loss.`;
-    window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-    notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'Market data only — your P&L is never shared' });
-  };
+  const shareText = `Pulse Snapshot: ${market.title} Market says ${Math.round(upPrice * 100)}% UP right now. #TradingSimplified\n\nMarket data only, not advice. Event contracts involve risk of loss.`;
+  const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
+  const share = () => notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'Market data only — your P&L is never shared' });
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -142,7 +140,10 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
                 onClick={() => onPredict({ market, side: 'DOWN', price: downPrice, stake: PREDICT_STAKE })}
               />
             </div>
-            <button
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={share}
               className="group flex w-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border border-ink-600 bg-ink-850 text-ink-300 transition hover:-translate-y-0.5 hover:border-sky-400/60 hover:bg-sky-400/10 hover:text-sky-300"
               title="Viral Pulse — Share to X"
@@ -156,7 +157,7 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
                 <br />
                 to X
               </span>
-            </button>
+            </a>
           </div>
 
           <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-500">

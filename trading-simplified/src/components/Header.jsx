@@ -6,7 +6,7 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
   const graduated = balance >= GRADUATION_TARGET;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-700/80 bg-ink-950/85 backdrop-blur-md">
+    <header style={{ top: 'env(safe-area-inset-top, 0px)' }} className="sticky z-40 border-b border-ink-700/80 bg-ink-950/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 lg:px-6">
         {/* Brand */}
         <div className="flex items-center gap-2.5">

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Download, Gauge, Lock, Minus, Percent, Plus, Ruler, ShieldCheck, Target } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, Gauge, Lock, Minus, Percent, Plus, Ruler, ShieldCheck, Target } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
 import { SMART_STAKE_PCT, TRADE_SYMBOLS, fmtNum, fmtUSD, makeSeries, seedFrom, smartStakeCap } from '../data/mock.js';
 
-export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, onOrder }) {
+export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, onOrder, notify }) {
   const [symbol, setSymbol] = useState('SPY');
   const q = TRADE_SYMBOLS.find((s) => s.symbol === symbol);
   const series = useMemo(() => makeSeries(seedFrom('trade' + symbol), q.price, q.price * 0.0028, 110), [symbol, q.price]);
@@ -92,11 +92,11 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
             <div className="flex items-center gap-3">
               <span className="font-mono text-[11px] text-ink-400">{orders.length} working</span>
               <button
-                onClick={() => exportCostBasis(orders)}
+                onClick={() => copyCostBasis(orders, notify)}
                 disabled={orders.length === 0}
                 className="inline-flex items-center gap-1 rounded border border-ink-600 px-2 py-0.5 font-mono text-[10px] text-ink-300 transition enabled:hover:border-terminal/60 enabled:hover:text-terminal disabled:opacity-40"
               >
-                <Download className="h-3 w-3" /> Cost basis CSV
+                <ClipboardCopy className="h-3 w-3" /> Copy cost basis CSV
               </button>
             </div>
           </div>
@@ -344,14 +344,16 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
 }
 
 /** Tax-reporting support (v3.8 §5): user-side cost-basis export; official 1099s come from the partner. */
-function exportCostBasis(orders) {
+function copyCostBasis(orders, notify) {
   const rows = [['time', 'side', 'symbol', 'qty', 'limit', 'notional', 'account'], ...orders.map((o) => [o.time, o.side, o.symbol, o.qty, o.limit.toFixed(2), o.notional.toFixed(2), o.margin ? 'margin' : 'cash'])];
-  const blob = new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'trading-simplified-cost-basis.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const csv = rows.map((r) => r.join(',')).join('\n');
+  const done = () => notify({ kind: 'success', title: 'Cost basis copied', body: `${orders.length} order${orders.length === 1 ? '' : 's'} as CSV · paste into a spreadsheet` });
+  const fail = () => notify({ kind: 'warning', title: 'Could not copy', body: 'Clipboard access was blocked by the browser' });
+  try {
+    navigator.clipboard.writeText(csv).then(done, fail);
+  } catch {
+    fail();
+  }
 }
 
 const floor3 = (n) => Math.floor(n * 1000) / 1000;

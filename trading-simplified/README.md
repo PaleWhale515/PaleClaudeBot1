@@ -9,7 +9,10 @@ cd trading-simplified
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # static bundle in dist/ (relative paths, host anywhere)
+npm run build:artifact   # single self-contained page for claude.ai hosting
 ```
+
+**Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (private until shared from the page's Share menu). `build:artifact` writes `dist-artifact/trading-simplified.html`: app JS and CSS are inlined, and React 18.3.1 loads from cdnjs. Republish that file to update the link.
 
 ## Structure
 
@@ -30,7 +33,7 @@ src/
 ## Demo script
 
 1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
-2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity or the tier's per-order limit, whichever is lower. Use **Clamp**, then submit. **Cost basis CSV** in the blotter downloads a tax-reporting export.
+2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity or the tier's per-order limit, whichever is lower. Use **Clamp**, then submit. **Copy cost basis CSV** in the blotter copies a tax-reporting export to the clipboard.
 3. **Kill switch:** turn it on in the header. A red View-Only banner appears, execution-API latency jumps above the 500 ms trip point, and every execution button is grayed out.
 4. **Graduation Flywheel (balance + discipline + partner approval):**
    - Click the Tier badge, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.

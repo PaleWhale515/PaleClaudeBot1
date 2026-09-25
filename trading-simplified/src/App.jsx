@@ -151,7 +151,7 @@ export default function App() {
           {channel === 'predict' ? (
             <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
           ) : (
-            <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} onOrder={handleOrder} />
+            <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} onOrder={handleOrder} notify={notify} />
           )}
         </div>
 
