@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Clock, Lock, Share2, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
-import { PREDICT_MARKETS, PREDICT_STAKE, fmtCountdown, fmtNum, fmtUSD, makeSeries, seedFrom } from '../data/mock.js';
+import { PREDICT_MARKETS, fmtCountdown, fmtNum, fmtUSD, makeSeries, seedFrom } from '../data/mock.js';
 
 const RANGES = ['1H', '1D', '5D'];
 
-export default function PredictChannel({ killSwitch, balance, positions, onPredict, notify }) {
+export default function PredictChannel({ killSwitch, balance, tier, positions, onPredict, notify }) {
+  const PREDICT_STAKE = tier.predictStake;
   const [marketId, setMarketId] = useState(PREDICT_MARKETS[0].id);
   const [range, setRange] = useState('1D');
   const [tick, setTick] = useState(0);
@@ -37,9 +38,9 @@ export default function PredictChannel({ killSwitch, balance, positions, onPredi
   const disabled = killSwitch || insufficient;
 
   const share = () => {
-    const text = `Called it on @TradingSimplified: ${market.title} — ${Math.round(upPrice * 100)}% implied UP right now. Capped risk, $20 stakes.`;
+    const text = `Pulse Snapshot: ${market.title} — market says ${Math.round(upPrice * 100)}% UP right now. #TradingSimplified`;
     window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-    notify({ kind: 'info', title: 'Viral Pulse card generated', body: 'Opened share composer for X' });
+    notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'Opened share composer for X' });
   };
 
   return (
@@ -63,7 +64,7 @@ export default function PredictChannel({ killSwitch, balance, positions, onPredi
 
         <div className="flex flex-wrap items-start justify-between gap-4 px-4 pt-4 sm:px-5">
           <div>
-            <p className="label">Event Contract · Binary · Capped Risk</p>
+            <p className="label">Index Event Contract · Binary · Capped Risk</p>
             <h2 className="mt-1 text-xl font-semibold tracking-tight text-ink-100 sm:text-2xl">{market.title}</h2>
             <p className="mt-1 text-sm text-ink-400">{market.subtitle}</p>
           </div>
@@ -128,15 +129,17 @@ export default function PredictChannel({ killSwitch, balance, positions, onPredi
             <div className="grid flex-1 gap-2">
               <ExecButton
                 side="UP"
+                stake={PREDICT_STAKE}
                 price={upPrice}
                 disabled={disabled}
-                onClick={() => onPredict({ market, side: 'UP', price: upPrice })}
+                onClick={() => onPredict({ market, side: 'UP', price: upPrice, stake: PREDICT_STAKE })}
               />
               <ExecButton
                 side="DOWN"
+                stake={PREDICT_STAKE}
                 price={downPrice}
                 disabled={disabled}
-                onClick={() => onPredict({ market, side: 'DOWN', price: downPrice })}
+                onClick={() => onPredict({ market, side: 'DOWN', price: downPrice, stake: PREDICT_STAKE })}
               />
             </div>
             <button
@@ -174,8 +177,10 @@ export default function PredictChannel({ killSwitch, balance, positions, onPredi
             <dd className="text-right text-up num">{fmtUSD(PREDICT_STAKE / upPrice)}</dd>
             <dt className="text-ink-400">Payout if DOWN wins</dt>
             <dd className="text-right text-down num">{fmtUSD(PREDICT_STAKE / downPrice)}</dd>
-            <dt className="text-ink-400">Venue</dt>
-            <dd className="text-right text-ink-200">DCM partner (mock)</dd>
+            <dt className="text-ink-400">Stake tier</dt>
+            <dd className="text-right text-terminal">{tier.name}</dd>
+            <dt className="text-ink-400">Contract</dt>
+            <dd className="text-right text-ink-200">CME index event (mock)</dd>
           </dl>
         </section>
 
@@ -216,7 +221,7 @@ export default function PredictChannel({ killSwitch, balance, positions, onPredi
   );
 }
 
-function ExecButton({ side, price, disabled, onClick }) {
+function ExecButton({ side, stake, price, disabled, onClick }) {
   const up = side === 'UP';
   const Icon = up ? ArrowUpRight : ArrowDownRight;
   return (
@@ -234,7 +239,7 @@ function ExecButton({ side, price, disabled, onClick }) {
           <Icon className="h-5 w-5" strokeWidth={2.5} />
           {side}
         </span>
-        <span className="font-mono text-[11px] text-ink-300">Stake {fmtUSD(PREDICT_STAKE, 0)}</span>
+        <span className="font-mono text-[11px] text-ink-300">Stake {fmtUSD(stake, 0)}</span>
       </span>
       <span className="text-right">
         <span className="block font-mono text-lg font-semibold text-ink-100 num">{Math.round(price * 100)}¢</span>

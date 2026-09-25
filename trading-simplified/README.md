@@ -34,12 +34,14 @@ src/
 3. **Kill switch:** turn it on in the header. A red "API Latency: View-Only Mode" banner appears, latency jumps above 1,400 ms, and every execution button is grayed out.
 4. **Graduation Flywheel:** click the Tier badge. Use the demo slider or the $2,450 / $12,800 presets to show graduation. Margin unlocks on the ticket at Tier B.
 
-## Tier rules (prototype policy)
+## Tier rules (white paper v3.7)
 
-| Tier | Account value | Access |
-|---|---|---|
-| A | < $2,000 | Cash only, max stake $500 |
-| B | $2,000 – $9,999 | Margin enabled |
-| C | $10,000+ | Institutional limits |
+| Tier | Account value | Predict stake | Max Trade stake | Access |
+|---|---|---|---|---|
+| A | < $2,000 | $20 | $500 | Cash only (T+1) |
+| B | $2,000 – $9,999 | $100 | $2,500 | Margin enabled |
+| C | $10,000+ | $500 *(placeholder)* | No tier cap | Institutional limits |
+
+The 25% Smart Stake cap applies at every tier, including Tier C. The white paper's tier table says "Unlimited Stake" for Tier C, but section 5 says the 25% limit is hard-coded for every order. The prototype follows section 5 until that's settled. The Safe-State kill switch trips when clearing-API latency is above 500 ms.
 
 The Tier B line lines up with FINRA Rule 4210's $2,000 minimum equity for margin accounts. Check current FINRA, SEC, and CFTC rules before any live build.

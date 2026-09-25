@@ -6,7 +6,7 @@ import PredictChannel from './components/PredictChannel.jsx';
 import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
 import Toasts from './components/Toasts.jsx';
-import { PREDICT_STAKE, STARTING_BALANCE, fmtNum, fmtUSD, tierFor } from './data/mock.js';
+import { KILL_SWITCH_MS, STARTING_BALANCE, fmtNum, fmtUSD, tierFor } from './data/mock.js';
 
 const now = () => new Date().toLocaleTimeString('en-US', { hour12: false });
 
@@ -36,7 +36,7 @@ export default function App() {
   // mock latency feed; spikes while the kill switch is engaged
   useEffect(() => {
     const t = setInterval(() => {
-      setLatency(killSwitch ? 1400 + Math.round(Math.random() * 900) : 12 + Math.round(Math.random() * 14));
+      setLatency(killSwitch ? 620 + Math.round(Math.random() * 400) : 12 + Math.round(Math.random() * 14));
     }, 1200);
     return () => clearInterval(t);
   }, [killSwitch]);
@@ -48,7 +48,7 @@ export default function App() {
       notify({
         kind: up ? 'success' : 'warning',
         title: up ? `Graduated to ${tier.name}` : `Moved to ${tier.name}`,
-        body: tier.margin ? 'Margin enabled on the TRADE channel' : 'Cash only · max stake $500',
+        body: `${tier.margin ? 'Margin enabled' : 'Cash only (T+1)'} · $${tier.predictStake} Predict · ${tier.maxStake ? fmtUSD(tier.maxStake, 0) + ' max stake' : 'no tier stake cap'}`,
       });
       prevTier.current = tier.id;
     }
@@ -59,22 +59,22 @@ export default function App() {
     setKillSwitch(next);
     notify(
       next
-        ? { kind: 'warning', title: 'Safe-State Kill Switch engaged', body: 'API Latency: View-Only Mode' }
+        ? { kind: 'warning', title: 'Safe-State Kill Switch engaged', body: `Clearing-API latency > ${KILL_SWITCH_MS} ms · View-Only Mode` }
         : { kind: 'success', title: 'Execution restored', body: 'Order routing back online' },
     );
   };
 
-  const handlePredict = ({ market, side, price }) => {
+  const handlePredict = ({ market, side, price, stake }) => {
     if (killSwitch) return;
-    setBalance((b) => b - PREDICT_STAKE);
+    setBalance((b) => b - stake);
     setPositions((p) => [
-      { id: Date.now(), title: market.title, side, price, stake: PREDICT_STAKE, time: now() },
+      { id: Date.now(), title: market.title, side, price, stake, time: now() },
       ...p,
     ]);
     notify({
       kind: 'success',
       title: `Prediction placed: ${side}`,
-      body: `${market.symbol} · ${fmtUSD(PREDICT_STAKE, 0)} @ ${Math.round(price * 100)}¢ · max payout ${fmtUSD(PREDICT_STAKE / price)}`,
+      body: `${market.symbol} · ${fmtUSD(stake, 0)} @ ${Math.round(price * 100)}¢ · max payout ${fmtUSD(stake / price)}`,
     });
   };
 
@@ -113,7 +113,7 @@ export default function App() {
 
         <div key={channel} className="animate-fade-in">
           {channel === 'predict' ? (
-            <PredictChannel killSwitch={killSwitch} balance={balance} positions={positions} onPredict={handlePredict} notify={notify} />
+            <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
           ) : (
             <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} orders={orders} onOrder={handleOrder} />
           )}

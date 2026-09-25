@@ -1,5 +1,5 @@
-import { Check, GraduationCap, Lock, X } from 'lucide-react';
-import { TIERS, fmtUSD, smartStakeCap } from '../data/mock.js';
+import { Check, CircleDashed, GraduationCap, Lock, X } from 'lucide-react';
+import { DISCIPLINE_AUDIT, TIERS, fmtUSD, smartStakeCap } from '../data/mock.js';
 
 export default function FlywheelPanel({ open, onClose, balance, setBalance, tier }) {
   if (!open) return null;
@@ -45,6 +45,25 @@ export default function FlywheelPanel({ open, onClose, balance, setBalance, tier
                 {next.margin && !tier.margin ? 'margin' : next.title.toLowerCase() + ' access'}.
               </p>
             )}
+          </div>
+
+          {/* Discipline audit — graduation is gated on behavior, not just balance */}
+          <div className="rounded-xl border border-ink-700 bg-ink-850/60 p-4">
+            <div className="flex items-center justify-between">
+              <p className="label">Discipline Audit</p>
+              <span className="font-mono text-[10px] text-ink-400">Graduation needs balance + discipline</span>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {DISCIPLINE_AUDIT.map((d) => (
+                <li key={d.label} className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2 text-ink-200">
+                    {d.pass ? <Check className="h-3.5 w-3.5 text-up" /> : <CircleDashed className="h-3.5 w-3.5 text-terminal" />}
+                    {d.label}
+                  </span>
+                  <span className={`font-mono num ${d.pass ? 'text-ink-100' : 'text-terminal'}`}>{d.value}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Flywheel visual */}

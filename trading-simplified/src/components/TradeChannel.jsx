@@ -312,6 +312,8 @@ function OrderTicket({ quote, balance, tier, killSwitch, onOrder }) {
           <dd className="text-right text-ink-100 num">{balance > 0 ? ((notional / balance) * 100).toFixed(1) : '0.0'}%</dd>
           <dt className="text-ink-400">Account type</dt>
           <dd className="text-right text-ink-100">{useMargin ? 'Margin' : 'Cash'}</dd>
+          <dt className="text-ink-400">Settlement</dt>
+          <dd className="text-right text-ink-100">T+1</dd>
         </dl>
 
         <button

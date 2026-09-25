@@ -3,8 +3,8 @@
 export const STARTING_BALANCE = 1482.5;
 export const GRADUATION_TARGET = 2000;
 export const SMART_STAKE_PCT = 0.25;
-export const PREDICT_STAKE = 20;
 
+// Tier policy per Trading Simplified white paper v3.7 (June 2026).
 export const TIERS = [
   {
     id: 'A',
@@ -13,9 +13,10 @@ export const TIERS = [
     min: 0,
     max: 1999.99,
     range: '< $2,000',
+    predictStake: 20,
     maxStake: 500,
     margin: false,
-    perks: ['Cash account only', 'Max stake $500 per order', 'Predict + Trade channels'],
+    perks: ['Cash only · T+1 settlement', '$20 Predict stake', '$500 max Trade stake'],
   },
   {
     id: 'B',
@@ -24,9 +25,10 @@ export const TIERS = [
     min: 2000,
     max: 9999.99,
     range: '$2,000 – $9,999',
-    maxStake: null,
+    predictStake: 100,
+    maxStake: 2500,
     margin: true,
-    perks: ['Margin enabled (2:1 overnight)', 'Smart Stake at 25% of equity', 'Defined-risk options spreads'],
+    perks: ['Margin enabled', '$100 Predict stake', '$2,500 max Trade stake'],
   },
   {
     id: 'C',
@@ -35,10 +37,23 @@ export const TIERS = [
     min: 10000,
     max: Infinity,
     range: '$10,000+',
+    // White paper leaves Tier C Predict sizing as "Institutional Limits" — placeholder.
+    predictStake: 500,
     maxStake: null,
     margin: true,
-    perks: ['Institutional position limits', 'Priority routing & API access', 'Portfolio-level risk analytics'],
+    perks: ['Institutional limits', 'No tier stake cap (25% Smart Stake still enforced)', 'Priority API routing'],
   },
+];
+
+/** Clearing-API latency above this trips the Safe-State kill switch. */
+export const KILL_SWITCH_MS = 500;
+
+/** Graduation is audited on discipline, not just PnL (mock audit). */
+export const DISCIPLINE_AUDIT = [
+  { label: 'Smart Stake adherence', value: '100%', pass: true },
+  { label: 'Orders with defined exit', value: '92%', pass: true },
+  { label: 'Max drawdown (30d)', value: '−6.4%', pass: true },
+  { label: 'Trading days active', value: '18 / 20', pass: false },
 ];
 
 export function tierFor(balance) {

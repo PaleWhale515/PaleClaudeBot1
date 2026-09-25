@@ -1,5 +1,5 @@
 import { Activity, ChevronRight, Layers, ShieldAlert, Wallet } from 'lucide-react';
-import { GRADUATION_TARGET, fmtUSD } from '../data/mock.js';
+import { GRADUATION_TARGET, KILL_SWITCH_MS, fmtUSD } from '../data/mock.js';
 
 export default function Header({ balance, tier, killSwitch, onKillSwitch, latency, onOpenFlywheel }) {
   const progress = Math.min(100, (balance / GRADUATION_TARGET) * 100);
@@ -56,7 +56,7 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
         {/* Kill switch */}
         <div className="ml-auto flex items-center gap-3 md:ml-0">
           <div className="hidden text-right sm:block">
-            <p className="label">API Latency</p>
+            <p className="label">Clearing API · trip {KILL_SWITCH_MS}ms</p>
             <p className={`flex items-center justify-end gap-1 font-mono text-xs num ${killSwitch ? 'text-down' : 'text-up'}`}>
               <Activity className="h-3 w-3" />
               {latency} ms
@@ -86,7 +86,7 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
               <span className="relative inline-flex h-2 w-2 rounded-full bg-down" />
             </span>
             <span className="font-semibold uppercase tracking-wider">API Latency: View-Only Mode</span>
-            <span className="hidden text-down/70 sm:inline">— Safe-State engaged. Order routing suspended; market data remains live.</span>
+            <span className="hidden text-down/70 sm:inline">— Clearing-API latency above {KILL_SWITCH_MS} ms. Safe-State engaged; no orders are broadcast. Market data remains live.</span>
           </div>
         </div>
       )}
