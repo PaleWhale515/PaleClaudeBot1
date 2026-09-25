@@ -12,7 +12,7 @@ npm run build    # static bundle in dist/ (relative paths, host anywhere)
 npm run build:artifact   # single self-contained page for claude.ai hosting
 ```
 
-**Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (private until shared from the page's Share menu). First-time visitors see a partner intro screen. Its choice is remembered per browser, **Overview** reopens it, and adding `#demo` to the link skips it for live pitches. `build:artifact` writes `dist-artifact/trading-simplified.html`: app JS and CSS are inlined, and React 18.3.1 loads from cdnjs. Republish that file to update the link.
+**Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (private until shared from the page's Share menu). First-time visitors see a partner intro screen. Its choice is remembered per browser, **Overview** reopens it, and adding `#demo` to the link skips it for live pitches. `build:artifact` writes `dist-artifact/trading-simplified.html`: one self-contained page with React, app JS and CSS all inlined (no script CDN), plus a visible fallback message if the app fails to start. Republish that file to update the link.
 
 ## Structure
 

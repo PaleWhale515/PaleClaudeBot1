@@ -3,9 +3,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const js = readFileSync('dist-artifact/app.js', 'utf8').replace(/<\/script/gi, '<\\/script');
 const css = readFileSync('dist-artifact/app.css', 'utf8');
-const REACT = 'https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js';
-const REACT_DOM = 'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js';
 
+// #root holds a visible fallback until React replaces it, so a script failure
+// never shows as a blank screen.
 const html = `<title>Trading Simplified</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,11 +13,18 @@ const html = `<title>Trading Simplified</title>
 <style>
 :root { color-scheme: dark; }
 body { background: #07090d; color: #e4e8ee; }
+.boot { min-height: 60vh; display: grid; place-items: center; padding-inline: 16px; font: 14px/1.5 Inter, system-ui, sans-serif; color: #8792a3; text-align: center; }
 ${css}
 </style>
-<div id="root"></div>
-<script src="${REACT}"></script>
-<script src="${REACT_DOM}"></script>
+<div id="root"><div class="boot"><p>Loading Trading Simplified…<br>If this message stays, reload the page.</p></div></div>
+<script>
+window.addEventListener('error', function (e) {
+  var root = document.getElementById('root');
+  if (root && root.querySelector('.boot')) {
+    root.querySelector('.boot').innerHTML = '<p>The prototype could not start.<br>' + String(e.message || 'Unknown error').replace(/[<>&]/g, '') + '</p>';
+  }
+});
+</script>
 <script>${js}</script>
 `;
 writeFileSync('dist-artifact/trading-simplified.html', html);
