@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Clock, Lock, Share2, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
-import { PREDICT_MARKETS, fmtCountdown, fmtNum, fmtUSD, makeSeries, seedFrom } from '../data/mock.js';
+import { PREDICT_FEE_PER_CONTRACT, PREDICT_MARKETS, fmtCountdown, fmtNum, fmtUSD, makeSeries, seedFrom } from '../data/mock.js';
 
 const RANGES = ['1H', '1D', '5D'];
 
@@ -38,9 +38,9 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
   const disabled = killSwitch || insufficient;
 
   const share = () => {
-    const text = `Pulse Snapshot: ${market.title} — market says ${Math.round(upPrice * 100)}% UP right now. #TradingSimplified`;
+    const text = `Pulse Snapshot: ${market.title} Market says ${Math.round(upPrice * 100)}% UP right now. #TradingSimplified\n\nMarket data only, not advice. Event contracts involve risk of loss.`;
     window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-    notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'Opened share composer for X' });
+    notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'Market data only — your P&L is never shared' });
   };
 
   return (
@@ -159,6 +159,10 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
             </button>
           </div>
 
+          <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-500">
+            Every position is a real exchange order. Trading Simplified never takes the other side. Pulse Snapshots share market data only.
+          </p>
+
           {killSwitch && (
             <p className="mt-3 rounded-md border border-down/30 bg-down/10 px-2.5 py-2 font-mono text-[11px] text-down">
               Execution disabled — View-Only Mode.
@@ -179,8 +183,14 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
             <dd className="text-right text-down num">{fmtUSD(PREDICT_STAKE / downPrice)}</dd>
             <dt className="text-ink-400">Stake tier</dt>
             <dd className="text-right text-terminal">{tier.name}</dd>
-            <dt className="text-ink-400">Contract</dt>
-            <dd className="text-right text-ink-200">CME index event (mock)</dd>
+            <dt className="text-ink-400">Contracts</dt>
+            <dd className="text-right text-ink-100 num">{Math.floor(PREDICT_STAKE / upPrice)} UP / {Math.floor(PREDICT_STAKE / downPrice)} DOWN</dd>
+            <dt className="text-ink-400">Fee (disclosed)</dt>
+            <dd className="text-right text-ink-100 num">{fmtUSD(PREDICT_FEE_PER_CONTRACT)} / contract</dd>
+            <dt className="text-ink-400">Execution</dt>
+            <dd className="text-right text-ink-200">[PARTNER] → exchange</dd>
+            <dt className="text-ink-400">Clearing</dt>
+            <dd className="text-right text-ink-200">Central (CME, mock)</dd>
           </dl>
         </section>
 

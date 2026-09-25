@@ -4,7 +4,8 @@ export const STARTING_BALANCE = 1482.5;
 export const GRADUATION_TARGET = 2000;
 export const SMART_STAKE_PCT = 0.25;
 
-// Tier policy per Trading Simplified white paper v3.7 (June 2026).
+// Tier policy per Trading Simplified white paper v3.8. Balance makes a user
+// eligible; the discipline audit must pass and the partner must approve.
 export const TIERS = [
   {
     id: 'A',
@@ -16,7 +17,7 @@ export const TIERS = [
     predictStake: 20,
     maxStake: 500,
     margin: false,
-    perks: ['Cash only · T+1 settlement', '$20 Predict stake', '$500 max Trade stake'],
+    perks: ['Cash account only · T+1 settlement', '$20 Predict stake', '$500 max per order'],
   },
   {
     id: 'B',
@@ -28,7 +29,7 @@ export const TIERS = [
     predictStake: 100,
     maxStake: 2500,
     margin: true,
-    perks: ['Margin enabled', '$100 Predict stake', '$2,500 max Trade stake'],
+    perks: ['Margin eligible · partner approval', '$100 Predict stake', '$2,500 max per order'],
   },
   {
     id: 'C',
@@ -37,32 +38,36 @@ export const TIERS = [
     min: 10000,
     max: Infinity,
     range: '$10,000+',
-    // White paper leaves Tier C Predict sizing as "Institutional Limits" — placeholder.
+    // v3.8 leaves Tier C Predict sizing as [TIER C LIMITS] — placeholder.
     predictStake: 500,
     maxStake: null,
     margin: true,
-    perks: ['Institutional limits', 'No tier stake cap (25% Smart Stake still enforced)', 'Priority API routing'],
+    perks: ['Expanded limits · partner approval', 'Partner-defined max per order', '25% Smart Stake still enforced'],
   },
 ];
 
-/** Clearing-API latency above this trips the Safe-State kill switch. */
+/** Partner execution-API latency above this trips the Safe-State kill switch. */
 export const KILL_SWITCH_MS = 500;
 
-/** Graduation is audited on discipline, not just PnL (mock audit). */
-export const DISCIPLINE_AUDIT = [
-  { label: 'Smart Stake adherence', value: '100%', pass: true },
-  { label: 'Orders with defined exit', value: '92%', pass: true },
-  { label: 'Max drawdown (30d)', value: '−6.4%', pass: true },
-  { label: 'Trading days active', value: '18 / 20', pass: false },
-];
+/** Disclosed per-contract fee on PREDICT (mock). */
+export const PREDICT_FEE_PER_CONTRACT = 0.01;
+
+/** Mock discipline audit. `gap` simulates a user who fails one check. */
+export function disciplineAudit(gap = false) {
+  return [
+    { label: 'Smart Stake adherence', value: '100%', pass: true },
+    { label: 'Orders with defined exit', value: gap ? '71%' : '92%', pass: !gap, need: '≥ 80%' },
+    { label: 'Max drawdown (30d)', value: '−6.4%', pass: true, need: '≤ 15%' },
+    { label: 'Trading days active', value: '20 / 20', pass: true },
+  ];
+}
 
 export function tierFor(balance) {
   return TIERS.find((t) => balance >= t.min && balance <= t.max) ?? TIERS[TIERS.length - 1];
 }
 
 /** Max notional per order: 25% of equity, further capped by the tier's hard limit. */
-export function smartStakeCap(balance) {
-  const tier = tierFor(balance);
+export function smartStakeCap(balance, tier = tierFor(balance)) {
   const pctCap = balance * SMART_STAKE_PCT;
   return tier.maxStake ? Math.min(pctCap, tier.maxStake) : pctCap;
 }

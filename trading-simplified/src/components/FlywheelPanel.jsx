@@ -1,7 +1,20 @@
-import { Check, CircleDashed, GraduationCap, Lock, X } from 'lucide-react';
-import { DISCIPLINE_AUDIT, TIERS, fmtUSD, smartStakeCap } from '../data/mock.js';
+import { Check, CircleDashed, GraduationCap, Loader2, Lock, Send, X } from 'lucide-react';
+import { TIERS, fmtUSD, smartStakeCap } from '../data/mock.js';
 
-export default function FlywheelPanel({ open, onClose, balance, setBalance, tier }) {
+export default function FlywheelPanel({
+  open,
+  onClose,
+  balance,
+  setBalance,
+  tier,
+  audit,
+  disciplineGap,
+  setDisciplineGap,
+  balanceQualifies,
+  eligible,
+  approvalPending,
+  onRequestUpgrade,
+}) {
   if (!open) return null;
   const idx = TIERS.findIndex((t) => t.id === tier.id);
   const next = TIERS[idx + 1];
@@ -15,7 +28,7 @@ export default function FlywheelPanel({ open, onClose, balance, setBalance, tier
             <GraduationCap className="h-5 w-5 text-terminal" />
             <div>
               <p className="text-sm font-semibold text-ink-100">The Graduation Flywheel</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-400">Access scales with account value</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-400">Balance + discipline · partner approves</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 text-ink-400 hover:bg-ink-700 hover:text-ink-100" aria-label="Close">
@@ -36,14 +49,26 @@ export default function FlywheelPanel({ open, onClose, balance, setBalance, tier
               </div>
               <div className="text-right">
                 <p className="label">Max per order</p>
-                <p className="font-mono text-sm text-ink-100 num">{fmtUSD(smartStakeCap(balance))}</p>
+                <p className="font-mono text-sm text-ink-100 num">{fmtUSD(smartStakeCap(balance, tier))}</p>
               </div>
             </div>
             {next && (
-              <p className="mt-3 text-xs text-ink-300">
-                <span className="font-mono text-terminal num">{fmtUSD(next.min - balance)}</span> until {next.name} unlocks{' '}
-                {next.margin && !tier.margin ? 'margin' : next.title.toLowerCase() + ' access'}.
-              </p>
+              <div className="mt-4 border-t border-terminal/20 pt-3">
+                <p className="label">Road to {next.name}</p>
+                <ul className="mt-2 space-y-1.5 text-xs">
+                  <Step done={balanceQualifies} label={`Account value ≥ ${fmtUSD(next.min, 0)}`} detail={balanceQualifies ? 'Met' : `${fmtUSD(next.min - balance)} to go`} />
+                  <Step done={audit.every((d) => d.pass)} label="Discipline audit passes" detail={audit.every((d) => d.pass) ? 'Met' : 'Gap found'} />
+                  <Step done={false} pending={approvalPending} label="Partner approves account upgrade" detail={approvalPending ? 'In review' : 'Required'} />
+                </ul>
+                <button
+                  onClick={onRequestUpgrade}
+                  disabled={!eligible || approvalPending}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-terminal py-2 text-sm font-semibold text-ink-950 transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-ink-700 disabled:text-ink-400"
+                >
+                  {approvalPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {approvalPending ? 'Partner reviewing…' : eligible ? `Submit for ${next.name} approval` : `Not yet eligible for ${next.name}`}
+                </button>
+              </div>
             )}
           </div>
 
@@ -51,14 +76,15 @@ export default function FlywheelPanel({ open, onClose, balance, setBalance, tier
           <div className="rounded-xl border border-ink-700 bg-ink-850/60 p-4">
             <div className="flex items-center justify-between">
               <p className="label">Discipline Audit</p>
-              <span className="font-mono text-[10px] text-ink-400">Graduation needs balance + discipline</span>
+              <span className="font-mono text-[10px] text-ink-400">Rolling 30 days</span>
             </div>
             <ul className="mt-3 space-y-2">
-              {DISCIPLINE_AUDIT.map((d) => (
+              {audit.map((d) => (
                 <li key={d.label} className="flex items-center justify-between text-xs">
                   <span className="flex items-center gap-2 text-ink-200">
                     {d.pass ? <Check className="h-3.5 w-3.5 text-up" /> : <CircleDashed className="h-3.5 w-3.5 text-terminal" />}
                     {d.label}
+                    {d.need && <span className="font-mono text-[10px] text-ink-500">{d.need}</span>}
                   </span>
                   <span className={`font-mono num ${d.pass ? 'text-ink-100' : 'text-terminal'}`}>{d.value}</span>
                 </li>
@@ -139,11 +165,16 @@ export default function FlywheelPanel({ open, onClose, balance, setBalance, tier
                 </button>
               ))}
             </div>
+            <label className="mt-3 flex cursor-pointer items-center justify-between border-t border-ink-700 pt-3 text-xs text-ink-300">
+              Simulate a discipline gap
+              <input type="checkbox" checked={disciplineGap} onChange={(e) => setDisciplineGap(e.target.checked)} className="h-4 w-4 accent-terminal" />
+            </label>
           </div>
 
           <p className="text-[11px] leading-relaxed text-ink-500">
-            Tier thresholds are product policy for this prototype. Margin eligibility in a live brokerage account is also subject to
-            regulatory minimum equity (e.g. FINRA Rule 4210's $2,000 minimum) and broker approval. All figures are mock data.
+            Trading Simplified recommends upgrades; the partner makes the final account-approval decision under its own process and
+            applicable rules, including FINRA Rule 4210 ($2,000 minimum equity for margin) and Rule 2360 (options approval). Margin
+            accounts are subject to the partner's pattern-day-trading policy. All figures are mock data.
           </p>
         </div>
       </aside>
@@ -196,5 +227,23 @@ function FlywheelRing({ activeIdx }) {
         </p>
       </div>
     </div>
+  );
+}
+
+function Step({ done, pending, label, detail }) {
+  return (
+    <li className="flex items-center justify-between">
+      <span className="flex items-center gap-2 text-ink-200">
+        {done ? (
+          <Check className="h-3.5 w-3.5 text-up" />
+        ) : pending ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-terminal" />
+        ) : (
+          <CircleDashed className="h-3.5 w-3.5 text-ink-500" />
+        )}
+        {label}
+      </span>
+      <span className={`font-mono text-[10px] ${done ? 'text-up' : 'text-ink-400'}`}>{detail}</span>
+    </li>
   );
 }

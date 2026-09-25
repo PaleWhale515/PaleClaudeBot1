@@ -6,7 +6,7 @@ import PredictChannel from './components/PredictChannel.jsx';
 import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
 import Toasts from './components/Toasts.jsx';
-import { KILL_SWITCH_MS, STARTING_BALANCE, fmtNum, fmtUSD, tierFor } from './data/mock.js';
+import { KILL_SWITCH_MS, PREDICT_FEE_PER_CONTRACT, STARTING_BALANCE, TIERS, disciplineAudit, fmtNum, fmtUSD, tierFor } from './data/mock.js';
 
 const now = () => new Date().toLocaleTimeString('en-US', { hour12: false });
 
@@ -19,9 +19,24 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [latency, setLatency] = useState(18);
-  const prevTier = useRef(tierFor(STARTING_BALANCE).id);
+  const [approvedTierId, setApprovedTierId] = useState(tierFor(STARTING_BALANCE).id);
+  const [approvalPending, setApprovalPending] = useState(false);
+  const [disciplineGap, setDisciplineGap] = useState(false);
+  const prevTier = useRef(approvedTierId);
+  const wasEligible = useRef(false);
 
-  const tier = tierFor(balance);
+  // v3.8: balance alone never upgrades a user. Effective tier is the lower of
+  // what the partner approved and what the balance supports (limits shrink
+  // automatically if the account falls).
+  const balanceIdx = TIERS.indexOf(tierFor(balance));
+  const approvedIdx = TIERS.findIndex((t) => t.id === approvedTierId);
+  const tier = TIERS[Math.min(balanceIdx, approvedIdx)];
+  const tierIdx = TIERS.indexOf(tier);
+  const audit = disciplineAudit(disciplineGap);
+  const disciplinePass = audit.every((a) => a.pass);
+  const nextTier = TIERS[tierIdx + 1];
+  const balanceQualifies = balanceIdx > tierIdx;
+  const eligible = balanceQualifies && disciplinePass;
 
   const dismiss = useCallback((id) => setToasts((t) => t.filter((x) => x.id !== id)), []);
   const notify = useCallback(
@@ -41,32 +56,52 @@ export default function App() {
     return () => clearInterval(t);
   }, [killSwitch]);
 
-  // celebrate tier changes
+  // announce tier changes
   useEffect(() => {
     if (prevTier.current !== tier.id) {
       const up = tier.id > prevTier.current;
       notify({
         kind: up ? 'success' : 'warning',
-        title: up ? `Graduated to ${tier.name}` : `Moved to ${tier.name}`,
-        body: `${tier.margin ? 'Margin enabled' : 'Cash only (T+1)'} · $${tier.predictStake} Predict · ${tier.maxStake ? fmtUSD(tier.maxStake, 0) + ' max stake' : 'no tier stake cap'}`,
+        title: up ? `Partner approved ${tier.name}` : `Limits reduced to ${tier.name}`,
+        body: `${tier.margin ? 'Margin enabled' : 'Cash only (T+1)'} · $${tier.predictStake} Predict · ${tier.maxStake ? fmtUSD(tier.maxStake, 0) + ' max per order' : 'partner-defined limits'}`,
       });
       prevTier.current = tier.id;
     }
   }, [tier, notify]);
+
+  // announce new eligibility once
+  useEffect(() => {
+    if (eligible && !wasEligible.current && nextTier) {
+      notify({ kind: 'info', title: `Eligible for ${nextTier.name}`, body: 'Open the Graduation Flywheel to submit for partner approval' });
+    }
+    wasEligible.current = eligible;
+  }, [eligible, nextTier, notify]);
+
+  const requestUpgrade = () => {
+    if (!eligible || approvalPending) return;
+    const target = nextTier;
+    setApprovalPending(true);
+    notify({ kind: 'info', title: `Recommended for ${target.name}`, body: 'Sent to partner for account approval' });
+    setTimeout(() => {
+      setApprovedTierId(target.id);
+      setApprovalPending(false);
+    }, 1800);
+  };
 
   const toggleKill = () => {
     const next = !killSwitch;
     setKillSwitch(next);
     notify(
       next
-        ? { kind: 'warning', title: 'Safe-State Kill Switch engaged', body: `Clearing-API latency > ${KILL_SWITCH_MS} ms · View-Only Mode` }
+        ? { kind: 'warning', title: 'Safe-State Kill Switch engaged', body: `Execution-API latency > ${KILL_SWITCH_MS} ms · View-Only Mode` }
         : { kind: 'success', title: 'Execution restored', body: 'Order routing back online' },
     );
   };
 
   const handlePredict = ({ market, side, price, stake }) => {
     if (killSwitch) return;
-    setBalance((b) => b - stake);
+    const fee = Math.floor(stake / price) * PREDICT_FEE_PER_CONTRACT;
+    setBalance((b) => b - stake - fee);
     setPositions((p) => [
       { id: Date.now(), title: market.title, side, price, stake, time: now() },
       ...p,
@@ -74,7 +109,7 @@ export default function App() {
     notify({
       kind: 'success',
       title: `Prediction placed: ${side}`,
-      body: `${market.symbol} · ${fmtUSD(stake, 0)} @ ${Math.round(price * 100)}¢ · max payout ${fmtUSD(stake / price)}`,
+      body: `${market.symbol} · ${fmtUSD(stake, 0)} @ ${Math.round(price * 100)}¢ + ${fmtUSD(fee)} fee · routed to exchange`,
     });
   };
 
@@ -84,7 +119,7 @@ export default function App() {
     notify({
       kind: 'success',
       title: `Order routed: ${o.side} ${+o.qty.toFixed(3)} ${o.symbol}`,
-      body: `Limit ${fmtNum(o.limit)} · notional ${fmtUSD(o.notional)} · ${o.margin ? 'margin' : 'cash'}`,
+      body: `Limit ${fmtNum(o.limit)} · ${fmtUSD(o.notional)} · ${o.margin ? 'margin' : 'cash'} · via partner`,
     });
   };
 
@@ -97,6 +132,7 @@ export default function App() {
         onKillSwitch={toggleKill}
         latency={latency}
         onOpenFlywheel={() => setFlywheelOpen(true)}
+        eligibleFor={eligible ? nextTier : null}
       />
 
       <main className="mx-auto max-w-[1440px] px-4 py-5 lg:px-6">
@@ -115,17 +151,30 @@ export default function App() {
           {channel === 'predict' ? (
             <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
           ) : (
-            <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} orders={orders} onOrder={handleOrder} />
+            <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} onOrder={handleOrder} />
           )}
         </div>
 
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-ink-800 pt-4 font-mono text-[10px] text-ink-500">
-          <span>Trading Simplified · Prototype build · All market data, balances and fills are simulated.</span>
-          <span>Not an offer to buy or sell securities or event contracts.</span>
+          <span>Trading Simplified · Prototype · All market data, balances and fills are simulated.</span>
+          <span>In production, custody, execution and account approval are provided by [PARTNER]. Not an offer to buy or sell securities or event contracts.</span>
         </footer>
       </main>
 
-      <FlywheelPanel open={flywheelOpen} onClose={() => setFlywheelOpen(false)} balance={balance} setBalance={setBalance} tier={tier} />
+      <FlywheelPanel
+        open={flywheelOpen}
+        onClose={() => setFlywheelOpen(false)}
+        balance={balance}
+        setBalance={setBalance}
+        tier={tier}
+        audit={audit}
+        disciplineGap={disciplineGap}
+        setDisciplineGap={setDisciplineGap}
+        balanceQualifies={balanceQualifies}
+        eligible={eligible}
+        approvalPending={approvalPending}
+        onRequestUpgrade={requestUpgrade}
+      />
       <Toasts toasts={toasts} dismiss={dismiss} />
     </div>
   );

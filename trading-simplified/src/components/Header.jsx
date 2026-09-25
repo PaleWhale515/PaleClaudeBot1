@@ -1,7 +1,7 @@
 import { Activity, ChevronRight, Layers, ShieldAlert, Wallet } from 'lucide-react';
 import { GRADUATION_TARGET, KILL_SWITCH_MS, fmtUSD } from '../data/mock.js';
 
-export default function Header({ balance, tier, killSwitch, onKillSwitch, latency, onOpenFlywheel }) {
+export default function Header({ balance, tier, killSwitch, onKillSwitch, latency, onOpenFlywheel, eligibleFor }) {
   const progress = Math.min(100, (balance / GRADUATION_TARGET) * 100);
   const graduated = balance >= GRADUATION_TARGET;
 
@@ -31,6 +31,12 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
                 {tier.name}
                 <ChevronRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
               </span>
+              {eligibleFor && (
+                <span className="ml-1.5 inline-flex items-center gap-1 rounded-md border border-sky-400/40 bg-sky-400/10 px-1.5 py-0.5 font-mono text-[10px] text-sky-300">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+                  {eligibleFor.id} eligible
+                </span>
+              )}
             </Metric>
           </button>
 
@@ -38,7 +44,7 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
             <div className="mb-1.5 flex items-baseline justify-between">
               <span className="label">Road to $2K</span>
               <span className="font-mono text-[11px] text-ink-300 num">
-                {graduated ? 'Graduated ✓' : `${fmtUSD(GRADUATION_TARGET - balance, 0)} to go`}
+                {graduated ? (tier.margin ? 'Margin approved ✓' : 'Balance met ✓') : `${fmtUSD(GRADUATION_TARGET - balance, 0)} to go`}
               </span>
             </div>
             <div className="relative h-1.5 overflow-hidden rounded-full bg-ink-700">
@@ -56,7 +62,7 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
         {/* Kill switch */}
         <div className="ml-auto flex items-center gap-3 md:ml-0">
           <div className="hidden text-right sm:block">
-            <p className="label">Clearing API · trip {KILL_SWITCH_MS}ms</p>
+            <p className="label">Exec API · trip {KILL_SWITCH_MS}ms</p>
             <p className={`flex items-center justify-end gap-1 font-mono text-xs num ${killSwitch ? 'text-down' : 'text-up'}`}>
               <Activity className="h-3 w-3" />
               {latency} ms
@@ -86,7 +92,7 @@ export default function Header({ balance, tier, killSwitch, onKillSwitch, latenc
               <span className="relative inline-flex h-2 w-2 rounded-full bg-down" />
             </span>
             <span className="font-semibold uppercase tracking-wider">API Latency: View-Only Mode</span>
-            <span className="hidden text-down/70 sm:inline">— Clearing-API latency above {KILL_SWITCH_MS} ms. Safe-State engaged; no orders are broadcast. Market data remains live.</span>
+            <span className="hidden text-down/70 sm:inline">— Partner execution-API latency above {KILL_SWITCH_MS} ms. Safe-State engaged; no orders are sent. Market data remains live.</span>
           </div>
         </div>
       )}

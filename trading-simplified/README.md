@@ -29,19 +29,23 @@ src/
 
 ## Demo script
 
-1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) comes off the balance, a toast confirms it, and the contract appears under *Open Contracts*. The share icon opens an X composer.
-2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity, and Tier A also has a hard cap of $500. Use **Clamp**, then submit. Fractional shares are supported, so a Tier A balance can still buy SPY.
-3. **Kill switch:** turn it on in the header. A red "API Latency: View-Only Mode" banner appears, latency jumps above the 500 ms trip point, and every execution button is grayed out.
-4. **Graduation Flywheel:** click the Tier badge. Use the demo slider or the $2,450 / $12,800 presets to show graduation. Margin unlocks on the ticket at Tier B.
+1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
+2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity or the tier's per-order limit, whichever is lower. Use **Clamp**, then submit. **Cost basis CSV** in the blotter downloads a tax-reporting export.
+3. **Kill switch:** turn it on in the header. A red View-Only banner appears, execution-API latency jumps above the 500 ms trip point, and every execution button is grayed out.
+4. **Graduation Flywheel (balance + discipline + partner approval):**
+   - Click the Tier badge, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.
+   - Tick **Simulate a discipline gap** to show that balance alone is not enough: the submit button stays locked.
+   - Untick it, then click **Submit for Tier B approval**. After a short simulated review, the partner approves Tier B and margin unlocks on the ticket.
+   - If the balance later falls below $2,000, limits drop back to Tier A automatically.
 
-## Tier rules (white paper v3.7)
+## Tier rules (white paper v3.8)
 
-| Tier | Account value | Predict stake | Max Trade stake | Access |
+| Tier | Account value | Predict stake | Max per order | Access |
 |---|---|---|---|---|
-| A | < $2,000 | $20 | $500 | Cash only (T+1) |
-| B | $2,000 – $9,999 | $100 | $2,500 | Margin enabled |
-| C | $10,000+ | $500 *(placeholder)* | No tier cap | Institutional limits |
+| A | < $2,000 | $20 | $500 | Cash account only (T+1) |
+| B | $2,000 – $9,999 | $100 | $2,500 | Margin eligible, partner approval |
+| C | $10,000+ | $500 *(placeholder for [TIER C LIMITS])* | Partner-defined | Expanded limits, partner approval |
 
-The 25% Smart Stake cap applies at every tier, including Tier C. The white paper's tier table says "Unlimited Stake" for Tier C, but section 5 says the 25% limit is hard-coded for every order. The prototype follows section 5 until that's settled. The Safe-State kill switch trips when clearing-API latency is above 500 ms.
+The 25% Smart Stake cap applies at every tier. A user's effective tier is the lower of what the partner approved and what their balance supports. `[PARTNER]` appears in the UI wherever the production partner's name belongs.
 
-The Tier B line lines up with FINRA Rule 4210's $2,000 minimum equity for margin accounts. Check current FINRA, SEC, and CFTC rules before any live build.
+Margin approval in a live account is the partner's decision under FINRA Rule 4210 ($2,000 minimum equity) and Rule 2360 (options). Check current FINRA, SEC, and CFTC rules before any live build.
