@@ -29,9 +29,9 @@ src/
 
 ## Demo script
 
-1. **PREDICT:** pick a market and tap **UP** or **DOWN**. $20 comes off the balance, a toast confirms it, and the contract appears under *Open Contracts*. The share icon opens an X composer.
+1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) comes off the balance, a toast confirms it, and the contract appears under *Open Contracts*. The share icon opens an X composer.
 2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity, and Tier A also has a hard cap of $500. Use **Clamp**, then submit. Fractional shares are supported, so a Tier A balance can still buy SPY.
-3. **Kill switch:** turn it on in the header. A red "API Latency: View-Only Mode" banner appears, latency jumps above 1,400 ms, and every execution button is grayed out.
+3. **Kill switch:** turn it on in the header. A red "API Latency: View-Only Mode" banner appears, latency jumps above the 500 ms trip point, and every execution button is grayed out.
 4. **Graduation Flywheel:** click the Tier badge. Use the demo slider or the $2,450 / $12,800 presets to show graduation. Margin unlocks on the ticket at Tier B.
 
 ## Tier rules (white paper v3.7)
