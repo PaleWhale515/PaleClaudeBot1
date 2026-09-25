@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, ClipboardCopy, Lock, Minus, Plus, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, ClipboardCopy, Lock, Minus, Plus, X, XCircle } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
 import { SMART_STAKE_PCT, TRADE_SYMBOLS, fmtNum, fmtUSD, makeSeries, seedFrom, smartStakeCap } from '../data/mock.js';
 import { newRiskQty, reverseBlockReason } from '../data/positions.js';
 
-export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, holdings, marks, onOrder, onReverse, onCloseAll, notify }) {
+export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, holdings, marks, onOrder, onReverse, onClose, onCloseAll, notify }) {
   const [symbol, setSymbol] = useState('SPY');
   const q = TRADE_SYMBOLS.find((s) => s.symbol === symbol);
   const mark = marks[symbol];
@@ -64,7 +64,7 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
           </div>
         </section>
 
-        <PositionsCard holdings={holdings} marks={marks} balance={balance} tier={tier} killSwitch={killSwitch} onReverse={onReverse} onCloseAll={onCloseAll} onSelect={setSymbol} />
+        <PositionsCard holdings={holdings} marks={marks} balance={balance} tier={tier} killSwitch={killSwitch} onReverse={onReverse} onClose={onClose} onCloseAll={onCloseAll} onSelect={setSymbol} />
 
         <section className="card p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,8 +118,9 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
   );
 }
 
-function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, onCloseAll, onSelect }) {
-  const [confirmReverse, setConfirmReverse] = useState(null);
+function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, onClose, onCloseAll, onSelect }) {
+  // { symbol, action: 'reverse' | 'close' } while a row is asking for confirmation
+  const [pending, setPending] = useState(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const rows = Object.entries(holdings).map(([symbol, h]) => {
     const mark = marks[symbol];
@@ -180,7 +181,7 @@ function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, 
           {rows.map((p) => {
             const blocked = reverseBlockReason({ qty: p.qty, mark: p.mark, cap, tier, killSwitch });
             const long = p.qty > 0;
-            const confirming = confirmReverse === p.symbol;
+            const confirming = pending?.symbol === p.symbol ? pending.action : null;
             return (
               <li key={p.symbol} className="py-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
@@ -202,36 +203,74 @@ function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, 
                       </p>
                     </div>
                     {!confirming && (
-                      <button
-                        onClick={() => setConfirmReverse(p.symbol)}
-                        disabled={Boolean(blocked)}
-                        aria-describedby={blocked ? `rev-why-${p.symbol}` : undefined}
-                        className="btn-exec inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-brand ring-1 ring-brand/40 enabled:hover:bg-brand-soft"
-                      >
-                        <ArrowLeftRight className="h-4 w-4" /> Reverse position
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setPending({ symbol: p.symbol, action: 'reverse' })}
+                          disabled={Boolean(blocked)}
+                          aria-describedby={blocked ? `rev-why-${p.symbol}` : undefined}
+                          aria-label={`Reverse position in ${p.symbol}`}
+                          className="btn-exec inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-brand ring-1 ring-brand/40 enabled:hover:bg-brand-soft"
+                        >
+                          <ArrowLeftRight className="h-4 w-4" /> Reverse position
+                        </button>
+                        <button
+                          onClick={() => setPending({ symbol: p.symbol, action: 'close' })}
+                          disabled={killSwitch}
+                          aria-label={`Close position in ${p.symbol}`}
+                          className="btn-exec inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-ink-2 ring-1 ring-line enabled:hover:bg-sunken enabled:hover:text-ink"
+                        >
+                          <X className="h-4 w-4" /> Close
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
-                {confirming && (
+                {confirming === 'reverse' && (
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-soft px-4 py-3">
                     <p className="text-sm text-ink">
                       {long ? 'Sell' : 'Buy'} {fmtQty(Math.abs(p.qty) * 2)} {p.symbol} at about {fmtNum(p.mark)}. You'll go from{' '}
                       {long ? 'long' : 'short'} to {long ? 'short' : 'long'} {fmtQty(Math.abs(p.qty))} shares.
                     </p>
                     <div className="flex gap-2">
-                      <button onClick={() => setConfirmReverse(null)} className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-surface">
+                      <button onClick={() => setPending(null)} className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-surface">
                         Cancel
                       </button>
                       <button
                         onClick={() => {
                           onReverse(p.symbol);
-                          setConfirmReverse(null);
+                          setPending(null);
                         }}
                         disabled={Boolean(blocked)}
                         className="btn-exec rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-on-brand enabled:hover:brightness-110"
                       >
                         Confirm reverse
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {confirming === 'close' && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-sunken px-4 py-3">
+                    <p className="text-sm text-ink">
+                      {long ? 'Sell' : 'Buy back'} {fmtQty(Math.abs(p.qty))} {p.symbol} at about {fmtNum(p.mark)}. You'd realize{' '}
+                      <span className={`font-semibold num ${p.pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                        {p.pnl >= 0 ? '+' : '−'}
+                        {fmtUSD(Math.abs(p.pnl))}
+                      </span>
+                      .
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setPending(null)} className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-surface">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          onClose(p.symbol);
+                          setPending(null);
+                        }}
+                        disabled={killSwitch}
+                        className="btn-exec rounded-full bg-ink px-4 py-1.5 text-sm font-semibold text-bg enabled:hover:brightness-110"
+                      >
+                        Confirm close
                       </button>
                     </div>
                   </div>
@@ -262,8 +301,8 @@ function Stat({ label, value, note }) {
 
 function OrderTicket({ quote, mark, held, balance, tier, nextTier, killSwitch, onOrder }) {
   const [side, setSide] = useState('BUY');
-  const [limit, setLimit] = useState(quote.price.toFixed(2));
-  const [qty, setQty] = useState(() => Math.min(1, floor3(smartStakeCap(balance, tier) / quote.price)));
+  const [limit, setLimit] = useState(mark.toFixed(2));
+  const [qty, setQty] = useState(() => Math.min(1, floor3(smartStakeCap(balance, tier) / mark)));
   const [useMargin, setUseMargin] = useState(false);
 
   useEffect(() => {

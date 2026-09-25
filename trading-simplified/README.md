@@ -39,7 +39,7 @@ src/
     ChannelToggle.jsx        Predict / Trade segmented control
     Logo.jsx                 three-step mark and wordmark
     PredictChannel.jsx       Velocity Engine: live chart, UP/DOWN $20 stakes, Share to X
-    TradeChannel.jsx         Trade: price and chart, market context, positions (Reverse / Close all), order history, order ticket
+    TradeChannel.jsx         Trade: price and chart, market context, positions (Reverse / Close / Close all), order history, order ticket
     FlywheelPanel.jsx        "Your path" drawer: next-tier checklist, discipline check, tiers, demo controls
     PriceChart.jsx           dependency-free SVG chart with crosshair tooltip
     IntroScreen.jsx          partner-facing overview shown on first visit
@@ -51,6 +51,7 @@ src/
 1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
 2. **TRADE:** add shares until the **Smart Stake** meter turns red. It caps the *new risk* an order adds at 25% of the balance or the tier's per-order limit, whichever is lower. Closing or reducing a position is never capped. Use **Clamp**, then submit. In the demo, orders fill right away and prices drift gently, so positions show live P&L.
    - **Reverse position** (on each row of *Your positions*) flips long to short, or short to long, after an inline confirmation. Going short needs a margin account, so it's blocked on Tier A with an explanation. It's also blocked when the flipped position would exceed the Smart Stake limit.
+   - **Close** (on each row) sells or buys back just that position after a confirmation that shows the P&L you'd realize.
    - **Close all positions** sells or covers everything at the current price, after a confirmation step, and adds the realized P&L to the balance.
    - On a cash account, the ticket won't sell more shares than you own (no short sales without margin).
    - **Copy cost basis (CSV)** copies the order history for tax reporting.

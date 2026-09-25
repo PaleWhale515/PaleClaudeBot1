@@ -216,15 +216,17 @@ export default function App() {
     });
   };
 
-  const handleCloseAll = () => {
-    if (killSwitch) return;
+  // Sells or covers the given symbols at the current price. Returns the total realized P&L.
+  const closeSymbols = (symbols, note) => {
     let book = holdings;
     let total = 0;
     const records = [];
-    for (const [symbol, h] of Object.entries(holdings)) {
+    for (const symbol of symbols) {
+      const h = book[symbol];
+      if (!h) continue;
       const mark = markOf(symbol);
       const qty = Math.abs(h.qty);
-      const res = fill(book, { side: h.qty > 0 ? 'SELL' : 'BUY', symbol, qty, limit: mark, notional: qty * mark, margin: h.qty < 0, note: 'Close all' });
+      const res = fill(book, { side: h.qty > 0 ? 'SELL' : 'BUY', symbol, qty, limit: mark, notional: qty * mark, margin: h.qty < 0, note });
       book = res.next;
       total += res.realized;
       records.push(res.record);
@@ -232,9 +234,26 @@ export default function App() {
     setHoldings(book);
     setBalance((b) => b + total);
     setOrders((list) => [...records.reverse(), ...list]);
+    return { total, count: records.length };
+  };
+
+  const handleClose = (symbol) => {
+    const h = holdings[symbol];
+    if (killSwitch || !h) return;
+    const { total } = closeSymbols([symbol], 'Close');
     notify({
       kind: 'success',
-      title: `Closed ${records.length} position${records.length === 1 ? '' : 's'}`,
+      title: `Closed ${symbol}`,
+      body: `${h.qty > 0 ? 'Sold' : 'Bought back'} ${+Math.abs(h.qty).toFixed(3)} shares at ${fmtNum(markOf(symbol))}. Realized ${fmtSigned(total)}.`,
+    });
+  };
+
+  const handleCloseAll = () => {
+    if (killSwitch) return;
+    const { total, count } = closeSymbols(Object.keys(holdings), 'Close all');
+    notify({
+      kind: 'success',
+      title: `Closed ${count} position${count === 1 ? '' : 's'}`,
       body: `Realized ${fmtSigned(total)} in total. You're now fully in cash.`,
     });
   };
@@ -259,7 +278,7 @@ export default function App() {
         {channel === 'predict' ? (
           <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
         ) : (
-          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} holdings={holdings} marks={marks} onOrder={handleOrder} onReverse={handleReverse} onCloseAll={handleCloseAll} notify={notify} />
+          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} holdings={holdings} marks={marks} onOrder={handleOrder} onReverse={handleReverse} onClose={handleClose} onCloseAll={handleCloseAll} notify={notify} />
         )}
 
         <footer className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-ink-3 sm:flex-row sm:items-start sm:justify-between">
