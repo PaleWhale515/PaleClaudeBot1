@@ -357,7 +357,7 @@ function OrderTicket({ quote, mark, held, balance, tier, nextTier, killSwitch, o
         <div>
           <p className="text-[15px] text-ink">Use margin</p>
           <p className="text-sm text-ink-3">
-            {tier.margin ? `Buying power ${fmtUSD(useMargin ? balance * 2 : balance)}` : `Unlocks at ${nextTier?.name ?? 'Tier B'} with partner approval`}
+            {tier.margin ? `Buying power ${fmtUSD(useMargin ? balance * 2 : balance)}, updated through the day` : `Unlocks at ${nextTier?.name ?? 'Tier B'} with partner approval`}
           </p>
         </div>
         {tier.margin ? (

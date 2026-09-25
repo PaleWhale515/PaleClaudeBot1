@@ -63,7 +63,7 @@ At every tier, no single order may exceed 25% of account equity (the Smart Stake
 1. Account value.
 2. A discipline record: adherence to Smart Stake limits, use of defined exits, and drawdown history.
 
-When a user qualifies, the engine **recommends** them to [PARTNER] for the next tier. [PARTNER] makes the final approval under its own account-approval process and applicable rules. These include the $2,000 minimum equity for margin accounts under FINRA Rule 4210 and options-account approval under FINRA Rule 2360. Margin accounts are also subject to [PARTNER]'s pattern-day-trading policy under current FINRA rules.
+When a user qualifies, the engine **recommends** them to [PARTNER] for the next tier. [PARTNER] makes the final approval under its own account-approval process and applicable rules. These include the $2,000 minimum equity for margin accounts under FINRA Rule 4210 and options-account approval under FINRA Rule 2360. Margin accounts follow FINRA Rule 4210's intraday margin standards (SEC approval April 14, 2026; effective June 4, 2026; FINRA Regulatory Notice 26-10). These replaced the pattern-day-trader designation and its $25,000 minimum: equity must instead cover the account's market exposure throughout the day. Firms may phase in the change through October 20, 2027, so [PARTNER]'s current policy governs during that window.
 
 ## 5. Architecture and Risk Controls
 

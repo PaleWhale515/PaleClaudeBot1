@@ -161,7 +161,7 @@ export default function FlywheelPanel({
 
           <p className="text-sm leading-relaxed text-ink-3">
             We recommend upgrades. [PARTNER] makes the final decision under its own process and the rules that apply, including FINRA Rule 4210 ($2,000 minimum
-            for margin) and Rule 2360 (options). Margin accounts follow the partner's pattern-day-trading policy. All figures are mock data.
+            for margin) and Rule 2360 (options). Margin accounts follow Rule 4210's intraday margin standards, which replaced the pattern-day-trader rule on June 4, 2026 (partners may phase them in through October 20, 2027). All figures are mock data.
           </p>
         </div>
       </aside>
