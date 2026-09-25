@@ -1,12 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Info } from 'lucide-react';
 import Header from './components/Header.jsx';
 import ChannelToggle from './components/ChannelToggle.jsx';
 import PredictChannel from './components/PredictChannel.jsx';
 import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
 import Toasts from './components/Toasts.jsx';
+import IntroScreen from './components/IntroScreen.jsx';
 import { KILL_SWITCH_MS, PREDICT_FEE_PER_CONTRACT, STARTING_BALANCE, TIERS, disciplineAudit, fmtNum, fmtUSD, tierFor } from './data/mock.js';
+
+const INTRO_KEY = 'ts-intro-seen';
+
+// Intro shows on first visit; a #demo link skips it (for live pitches).
+function shouldShowIntro() {
+  if (typeof window === 'undefined') return false;
+  if (window.location.hash === '#demo') return false;
+  try {
+    return window.localStorage.getItem(INTRO_KEY) !== '1';
+  } catch {
+    return true;
+  }
+}
 
 const now = () => new Date().toLocaleTimeString('en-US', { hour12: false });
 
@@ -15,6 +29,7 @@ export default function App() {
   const [channel, setChannel] = useState('predict');
   const [killSwitch, setKillSwitch] = useState(false);
   const [flywheelOpen, setFlywheelOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(shouldShowIntro);
   const [positions, setPositions] = useState([]);
   const [orders, setOrders] = useState([]);
   const [toasts, setToasts] = useState([]);
@@ -98,6 +113,17 @@ export default function App() {
     );
   };
 
+  const enterFromIntro = (startChannel) => {
+    setChannel(startChannel);
+    setIntroOpen(false);
+    window.scrollTo(0, 0);
+    try {
+      window.localStorage.setItem(INTRO_KEY, '1');
+    } catch {
+      /* storage unavailable: intro simply shows again next visit */
+    }
+  };
+
   const handlePredict = ({ market, side, price, stake }) => {
     if (killSwitch) return;
     const fee = Math.floor(stake / price) * PREDICT_FEE_PER_CONTRACT;
@@ -138,13 +164,22 @@ export default function App() {
       <main className="mx-auto max-w-[1440px] px-4 py-5 lg:px-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <ChannelToggle channel={channel} onChange={setChannel} />
-          <button
-            onClick={() => setFlywheelOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-200 transition hover:border-terminal/50 hover:text-terminal"
-          >
-            <GraduationCap className="h-4 w-4" />
-            Graduation Flywheel
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setIntroOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-200 transition hover:border-terminal/50 hover:text-terminal"
+            >
+              <Info className="h-4 w-4" />
+              Overview
+            </button>
+            <button
+              onClick={() => setFlywheelOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-200 transition hover:border-terminal/50 hover:text-terminal"
+            >
+              <GraduationCap className="h-4 w-4" />
+              Graduation Flywheel
+            </button>
+          </div>
         </div>
 
         <div key={channel} className="animate-fade-in">
@@ -175,6 +210,7 @@ export default function App() {
         approvalPending={approvalPending}
         onRequestUpgrade={requestUpgrade}
       />
+      {introOpen && <IntroScreen onEnter={enterFromIntro} />}
       <Toasts toasts={toasts} dismiss={dismiss} />
     </div>
   );
