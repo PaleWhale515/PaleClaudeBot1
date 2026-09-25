@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, ClipboardCopy, Lock, Minus, Plus } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, ClipboardCopy, Lock, Minus, Plus, XCircle } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
 import { SMART_STAKE_PCT, TRADE_SYMBOLS, fmtNum, fmtUSD, makeSeries, seedFrom, smartStakeCap } from '../data/mock.js';
+import { newRiskQty, reverseBlockReason } from '../data/positions.js';
 
-export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, onOrder, notify }) {
+export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, holdings, marks, onOrder, onReverse, onCloseAll, notify }) {
   const [symbol, setSymbol] = useState('SPY');
   const q = TRADE_SYMBOLS.find((s) => s.symbol === symbol);
-  const series = useMemo(() => makeSeries(seedFrom('trade' + symbol), q.price, q.price * 0.0028, 110), [symbol, q.price]);
+  const mark = marks[symbol];
+  const baseSeries = useMemo(() => makeSeries(seedFrom('trade' + symbol), q.price, q.price * 0.0028, 110), [symbol, q.price]);
+  const series = useMemo(() => [...baseSeries.slice(1), mark], [baseSeries, mark]);
   const band = { low: q.price - q.expectedMove, high: q.price + q.expectedMove };
-  const up = q.change >= 0;
+  const change = q.change + ((mark - q.price) / q.price) * 100;
+  const up = change >= 0;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -32,10 +36,10 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
         <section className="card p-6 sm:p-8">
           <p className="text-ink-2">{q.name}</p>
           <div className="mt-1 flex flex-wrap items-end gap-x-4 gap-y-1">
-            <p className="font-display text-5xl font-semibold tracking-tight text-ink num">{fmtUSD(q.price)}</p>
+            <p className="font-display text-5xl font-semibold tracking-tight text-ink num">{fmtUSD(mark)}</p>
             <p className={`flex items-center gap-1 pb-1.5 text-[15px] font-medium num ${up ? 'text-up' : 'text-down'}`}>
               {up ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-              {Math.abs(q.change).toFixed(2)}% today
+              {Math.abs(change).toFixed(2)}% today
             </p>
           </div>
           <div className="mt-6">
@@ -60,9 +64,11 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
           </div>
         </section>
 
+        <PositionsCard holdings={holdings} marks={marks} balance={balance} tier={tier} killSwitch={killSwitch} onReverse={onReverse} onCloseAll={onCloseAll} onSelect={setSymbol} />
+
         <section className="card p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-xl font-semibold text-ink">Your orders</h2>
+            <h2 className="font-display text-xl font-semibold text-ink">Order history</h2>
             <button
               onClick={() => copyCostBasis(orders, notify)}
               disabled={orders.length === 0}
@@ -72,7 +78,7 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
             </button>
           </div>
           {orders.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-2">No orders yet. Orders you place in this demo show up here.</p>
+            <p className="mt-3 text-sm text-ink-2">No orders yet. In this demo, orders fill right away at their limit price.</p>
           ) : (
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[480px] text-sm">
@@ -95,7 +101,8 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
                       <td className="py-3 pr-4 text-right num">{fmtNum(o.limit)}</td>
                       <td className="py-3 pr-4 text-right num">{fmtUSD(o.notional)}</td>
                       <td className="py-3">
-                        <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">Working</span>
+                        <span className="rounded-full bg-up-soft px-2 py-0.5 text-xs font-medium text-up">Filled</span>
+                        {o.note && <span className="ml-1.5 text-xs text-ink-3">{o.note}</span>}
                       </td>
                     </tr>
                   ))}
@@ -106,8 +113,140 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
         </section>
       </div>
 
-      <OrderTicket key={symbol} quote={q} balance={balance} tier={tier} nextTier={nextTier} killSwitch={killSwitch} onOrder={onOrder} />
+      <OrderTicket key={symbol} quote={q} mark={mark} held={holdings[symbol]?.qty ?? 0} balance={balance} tier={tier} nextTier={nextTier} killSwitch={killSwitch} onOrder={onOrder} />
     </div>
+  );
+}
+
+function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, onCloseAll, onSelect }) {
+  const [confirmReverse, setConfirmReverse] = useState(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const rows = Object.entries(holdings).map(([symbol, h]) => {
+    const mark = marks[symbol];
+    return { symbol, ...h, mark, value: h.qty * mark, pnl: (mark - h.avg) * h.qty };
+  });
+  const cap = smartStakeCap(balance, tier);
+  const totalPnl = rows.reduce((sum, p) => sum + p.pnl, 0);
+
+  return (
+    <section className="card p-6" aria-labelledby="positions-title">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="positions-title" className="font-display text-xl font-semibold text-ink">
+            Your positions
+          </h2>
+          {rows.length > 0 && (
+            <p className={`text-sm num ${totalPnl >= 0 ? 'text-up' : 'text-down'}`}>
+              {totalPnl >= 0 ? '+' : '−'}
+              {fmtUSD(Math.abs(totalPnl))} unrealized
+            </p>
+          )}
+        </div>
+        {rows.length > 0 &&
+          (confirmClose ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-ink-2">
+                Sell or cover all {rows.length} at market?
+              </span>
+              <button onClick={() => setConfirmClose(false)} className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-sunken">
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onCloseAll();
+                  setConfirmClose(false);
+                }}
+                disabled={killSwitch}
+                className="btn-exec rounded-full bg-down px-4 py-1.5 text-sm font-semibold text-surface enabled:hover:brightness-110"
+              >
+                Yes, close all
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmClose(true)}
+              disabled={killSwitch}
+              className="btn-exec inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-down ring-1 ring-down/40 enabled:hover:bg-down-soft"
+            >
+              <XCircle className="h-4 w-4" /> Close all positions
+            </button>
+          ))}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="mt-3 text-sm text-ink-2">You don't hold anything yet. Buy shares with the ticket and they'll appear here.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-line">
+          {rows.map((p) => {
+            const blocked = reverseBlockReason({ qty: p.qty, mark: p.mark, cap, tier, killSwitch });
+            const long = p.qty > 0;
+            const confirming = confirmReverse === p.symbol;
+            return (
+              <li key={p.symbol} className="py-4">
+                <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+                  <button onClick={() => onSelect(p.symbol)} className="min-w-[140px] text-left">
+                    <span className="flex items-center gap-2">
+                      <span className="font-display text-lg font-semibold text-ink">{p.symbol}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${long ? 'bg-up-soft text-up' : 'bg-down-soft text-down'}`}>{long ? 'Long' : 'Short'}</span>
+                    </span>
+                    <span className="block text-sm text-ink-3 num">
+                      {fmtQty(Math.abs(p.qty))} shares, avg {fmtNum(p.avg)}
+                    </span>
+                  </button>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="font-medium text-ink num">{fmtUSD(Math.abs(p.value))}</p>
+                      <p className={`text-sm num ${p.pnl >= 0 ? 'text-up' : 'text-down'}`}>
+                        {p.pnl >= 0 ? '+' : '−'}
+                        {fmtUSD(Math.abs(p.pnl))}
+                      </p>
+                    </div>
+                    {!confirming && (
+                      <button
+                        onClick={() => setConfirmReverse(p.symbol)}
+                        disabled={Boolean(blocked)}
+                        aria-describedby={blocked ? `rev-why-${p.symbol}` : undefined}
+                        className="btn-exec inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-brand ring-1 ring-brand/40 enabled:hover:bg-brand-soft"
+                      >
+                        <ArrowLeftRight className="h-4 w-4" /> Reverse position
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {confirming && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-soft px-4 py-3">
+                    <p className="text-sm text-ink">
+                      {long ? 'Sell' : 'Buy'} {fmtQty(Math.abs(p.qty) * 2)} {p.symbol} at about {fmtNum(p.mark)}. You'll go from{' '}
+                      {long ? 'long' : 'short'} to {long ? 'short' : 'long'} {fmtQty(Math.abs(p.qty))} shares.
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setConfirmReverse(null)} className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-surface">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          onReverse(p.symbol);
+                          setConfirmReverse(null);
+                        }}
+                        disabled={Boolean(blocked)}
+                        className="btn-exec rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-on-brand enabled:hover:brightness-110"
+                      >
+                        Confirm reverse
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {blocked && (
+                  <p id={`rev-why-${p.symbol}`} className="mt-2 text-sm text-ink-3">
+                    Reverse unavailable: {blocked}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -121,7 +260,7 @@ function Stat({ label, value, note }) {
   );
 }
 
-function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
+function OrderTicket({ quote, mark, held, balance, tier, nextTier, killSwitch, onOrder }) {
   const [side, setSide] = useState('BUY');
   const [limit, setLimit] = useState(quote.price.toFixed(2));
   const [qty, setQty] = useState(() => Math.min(1, floor3(smartStakeCap(balance, tier) / quote.price)));
@@ -134,11 +273,19 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
   const cap = smartStakeCap(balance, tier);
   const limitNum = parseFloat(limit) || 0;
   const notional = qty * limitNum;
-  const usage = cap > 0 ? notional / cap : 0;
-  const over = notional > cap;
-  const maxQty = limitNum > 0 ? floor3(cap / limitNum) : 0;
+  const signed = side === 'BUY' ? qty : -qty;
+  const canShort = tier.margin && useMargin;
+  // Smart Stake limits new risk only; closing or reducing a position is always allowed.
+  const riskNotional = newRiskQty(held, signed) * limitNum;
+  const usage = cap > 0 ? riskNotional / cap : 0;
+  const over = riskNotional > cap;
+  // A short sale needs a margin account (Reg T): cash accounts can only sell shares they own.
+  const shortBlocked = held + signed < -0.0005 && !canShort;
+  const capQty = limitNum > 0 ? floor3(cap / limitNum) : 0;
+  const reducible = side === 'BUY' ? Math.max(0, -held) : Math.max(0, held);
+  const maxQty = floor3(reducible + (side === 'SELL' && !canShort && held >= 0 ? 0 : capQty));
   const invalid = !(qty > 0) || limitNum <= 0;
-  const disabled = killSwitch || over || invalid;
+  const disabled = killSwitch || over || shortBlocked || invalid;
   const tierCapped = tier.maxStake && balance * SMART_STAKE_PCT > tier.maxStake;
 
   return (
@@ -165,7 +312,7 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
       <label className="block">
         <span className="flex justify-between text-sm">
           <span className="text-ink-2">Shares</span>
-          <span className="text-ink-3 num">Up to {fmtQty(maxQty)}, fractions allowed</span>
+          <span className="text-ink-3 num">{held !== 0 ? `You hold ${held > 0 ? '' : '−'}${fmtQty(Math.abs(held))}. ` : ''}Up to {fmtQty(maxQty)}</span>
         </span>
         <span className="mt-1.5 flex items-center rounded-xl bg-sunken ring-brand focus-within:ring-2">
           <button type="button" onClick={() => setQty((n) => floor3(Math.max(0.001, n - (n > 1 ? 1 : 0.1))))} className="p-3 text-ink-2 hover:text-ink" aria-label="Fewer shares">
@@ -189,8 +336,8 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
       <label className="block">
         <span className="flex justify-between text-sm">
           <span className="text-ink-2">Limit price</span>
-          <button type="button" onClick={() => setLimit(quote.price.toFixed(2))} className="font-medium text-brand hover:underline">
-            Use {fmtNum(quote.price)}
+          <button type="button" onClick={() => setLimit(mark.toFixed(2))} className="font-medium text-brand hover:underline">
+            Use {fmtNum(mark)}
           </button>
         </span>
         <span className="mt-1.5 flex items-center rounded-xl bg-sunken px-4 ring-brand focus-within:ring-2">
@@ -232,20 +379,24 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-sm font-medium text-ink">Smart Stake</p>
           <p className="text-sm text-ink-2 num">
-            {fmtUSD(notional)} of {fmtUSD(cap)}
+            {fmtUSD(riskNotional)} of {fmtUSD(cap)}
           </p>
         </div>
         <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-surface">
           <div className={`h-full rounded-full transition-all duration-300 ${over ? 'bg-down' : 'bg-brand'}`} style={{ width: `${Math.min(100, usage * 100)}%` }} />
         </div>
         <p className="mt-2 text-sm text-ink-3">
-          {tierCapped ? `${tier.name} orders are capped at ${fmtUSD(tier.maxStake, 0)}.` : `Each order can use up to ${SMART_STAKE_PCT * 100}% of your balance.`}
+          {riskNotional === 0 && qty > 0
+            ? "This order only closes or reduces a position, so it doesn't count toward the limit."
+            : tierCapped
+              ? `${tier.name} orders are capped at ${fmtUSD(tier.maxStake, 0)}.`
+              : `Each order can add up to ${SMART_STAKE_PCT * 100}% of your balance in new risk.`}
         </p>
         {over && (
           <div className="mt-3 flex items-start justify-between gap-3">
             <p className="flex items-start gap-2 text-sm text-down">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              {fmtUSD(notional - cap)} over the limit.
+              {fmtUSD(riskNotional - cap)} over the limit.
             </p>
             <button type="button" onClick={() => setQty(maxQty)} className="shrink-0 rounded-full bg-surface px-3 py-1 text-sm font-semibold text-down ring-1 ring-down/40 hover:bg-down-soft">
               Clamp to {fmtQty(maxQty)}
@@ -253,6 +404,14 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
           </div>
         )}
       </div>
+
+      {shortBlocked && (
+        <p className="flex items-start gap-2 rounded-2xl bg-gold-soft px-4 py-3 text-sm text-gold-ink">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+          {held > 0 ? `You own ${fmtQty(held)} ${quote.symbol}. Selling more would open a short position,` : `You don't own ${quote.symbol}. Selling it would open a short position,`}{' '}
+          {tier.margin ? 'so turn on margin first.' : `which needs a margin account (${nextTier?.name ?? 'Tier B'}, with partner approval).`}
+        </p>
+      )}
 
       <dl className="space-y-2 text-sm">
         <SummaryRow label="Estimated total" value={fmtUSD(notional)} strong />

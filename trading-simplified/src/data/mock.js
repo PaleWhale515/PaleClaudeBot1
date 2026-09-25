@@ -131,6 +131,13 @@ export const TRADE_SYMBOLS = [
   { symbol: 'TSLA', name: 'Tesla Inc.', price: 402.15, change: -1.12, ivRank: 63, expectedMove: 24.61, pop: 54, iv: 52.9, beta: 2.05 },
 ];
 
+/** Live-ish mock price: drifts gently around the quote so open positions show P&L. */
+export function liveMark(quote, tick) {
+  const phase = seedFrom(quote.symbol) % 17;
+  const drift = Math.sin((tick + phase) / 4) * 0.0022 + Math.sin((tick + phase) / 11) * 0.0016;
+  return Math.round(quote.price * (1 + drift) * 100) / 100;
+}
+
 /** Seeded random walk so charts are stable between renders. */
 export function makeSeries(seed, base, vol, points = 90) {
   let s = seed;

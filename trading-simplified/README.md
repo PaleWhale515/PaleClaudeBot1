@@ -33,12 +33,13 @@ Type: **Bricolage Grotesque** for headlines and big numbers, **Figtree** for eve
 src/
   App.jsx                    global state: balance, tier, channel, kill switch, toasts
   data/mock.js               tiers, Smart Stake math, markets, symbols, formatters
+  data/positions.js          fills, average cost, new-risk math, reverse eligibility
   components/
     Header.jsx               logo, Predict/Trade switch, balance with Road to $2K, theme toggle, Safe-State switch
     ChannelToggle.jsx        Predict / Trade segmented control
     Logo.jsx                 three-step mark and wordmark
     PredictChannel.jsx       Velocity Engine: live chart, UP/DOWN $20 stakes, Share to X
-    TradeChannel.jsx         Wealth Builder: Mechanical Data Dashboard, order ticket, blotter
+    TradeChannel.jsx         Trade: price and chart, market context, positions (Reverse / Close all), order history, order ticket
     FlywheelPanel.jsx        "Your path" drawer: next-tier checklist, discipline check, tiers, demo controls
     PriceChart.jsx           dependency-free SVG chart with crosshair tooltip
     IntroScreen.jsx          partner-facing overview shown on first visit
@@ -48,7 +49,11 @@ src/
 ## Demo script
 
 1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
-2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity or the tier's per-order limit, whichever is lower. Use **Clamp**, then submit. **Copy cost basis CSV** in the blotter copies a tax-reporting export to the clipboard.
+2. **TRADE:** add shares until the **Smart Stake** meter turns red. It caps the *new risk* an order adds at 25% of the balance or the tier's per-order limit, whichever is lower. Closing or reducing a position is never capped. Use **Clamp**, then submit. In the demo, orders fill right away and prices drift gently, so positions show live P&L.
+   - **Reverse position** (on each row of *Your positions*) flips long to short, or short to long, after an inline confirmation. Going short needs a margin account, so it's blocked on Tier A with an explanation. It's also blocked when the flipped position would exceed the Smart Stake limit.
+   - **Close all positions** sells or covers everything at the current price, after a confirmation step, and adds the realized P&L to the balance.
+   - On a cash account, the ticket won't sell more shares than you own (no short sales without margin).
+   - **Copy cost basis (CSV)** copies the order history for tax reporting.
 3. **Kill switch:** turn it on in the header. A red View-Only banner appears, execution-API latency jumps above the 500 ms trip point, and every execution button is grayed out.
 4. **Graduation (balance + discipline + partner approval):**
    - Click the balance in the header to open **Your path**, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.

@@ -5,7 +5,8 @@ import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
 import Toasts from './components/Toasts.jsx';
 import IntroScreen from './components/IntroScreen.jsx';
-import { KILL_SWITCH_MS, PREDICT_FEE_PER_CONTRACT, STARTING_BALANCE, TIERS, disciplineAudit, fmtNum, fmtUSD, tierFor } from './data/mock.js';
+import { KILL_SWITCH_MS, PREDICT_FEE_PER_CONTRACT, STARTING_BALANCE, TIERS, TRADE_SYMBOLS, disciplineAudit, fmtNum, fmtUSD, liveMark, tierFor } from './data/mock.js';
+import { applyFill } from './data/positions.js';
 
 const INTRO_KEY = 'ts-intro-seen';
 
@@ -46,9 +47,17 @@ export default function App() {
   const [introOpen, setIntroOpen] = useState(shouldShowIntro);
   const [positions, setPositions] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [holdings, setHoldings] = useState({});
   const [toasts, setToasts] = useState([]);
   const [latency, setLatency] = useState(18);
   const [theme, setTheme] = useState(initialTheme);
+  const [priceTick, setPriceTick] = useState(0);
+  const marks = Object.fromEntries(TRADE_SYMBOLS.map((q) => [q.symbol, liveMark(q, priceTick)]));
+
+  useEffect(() => {
+    const t = setInterval(() => setPriceTick((n) => n + 1), 1500);
+    return () => clearInterval(t);
+  }, []);
   const [approvedTierId, setApprovedTierId] = useState(tierFor(STARTING_BALANCE).id);
   const [approvalPending, setApprovalPending] = useState(false);
   const [disciplineGap, setDisciplineGap] = useState(false);
@@ -170,13 +179,63 @@ export default function App() {
     });
   };
 
+  // Mock execution: orders fill immediately at their price. Realized P&L moves the balance.
+  const markOf = (symbol) => marks[symbol];
+  const fill = (book, o) => {
+    const { holdings: next, realized } = applyFill(book, o.symbol, o.side === 'BUY' ? o.qty : -o.qty, o.limit);
+    return { next, realized, record: { ...o, id: `${Date.now()}-${o.symbol}-${Math.random().toString(36).slice(2, 6)}`, time: now(), realized } };
+  };
+  const fmtSigned = (n) => `${n < 0 ? '−' : '+'}${fmtUSD(Math.abs(n))}`;
+
   const handleOrder = (o) => {
     if (killSwitch) return;
-    setOrders((list) => [{ ...o, id: Date.now(), time: now() }, ...list]);
+    const { next, realized, record } = fill(holdings, o);
+    setHoldings(next);
+    setBalance((b) => b + realized);
+    setOrders((list) => [record, ...list]);
     notify({
       kind: 'success',
-      title: `Order sent: ${o.side === 'BUY' ? 'buy' : 'sell'} ${+o.qty.toFixed(3)} ${o.symbol}`,
-      body: `Limit ${fmtNum(o.limit)}, about ${fmtUSD(o.notional)} from your ${o.margin ? 'margin' : 'cash'} balance.`,
+      title: `Filled: ${o.side === 'BUY' ? 'bought' : 'sold'} ${+o.qty.toFixed(3)} ${o.symbol}`,
+      body: `At ${fmtNum(o.limit)}, about ${fmtUSD(o.notional)}.${realized ? ` Realized ${fmtSigned(realized)}.` : ''}`,
+    });
+  };
+
+  const handleReverse = (symbol) => {
+    const h = holdings[symbol];
+    if (killSwitch || !h) return;
+    const mark = markOf(symbol);
+    const qty = Math.abs(h.qty) * 2;
+    const { next, realized, record } = fill(holdings, { side: h.qty > 0 ? 'SELL' : 'BUY', symbol, qty, limit: mark, notional: qty * mark, margin: true, note: 'Reverse' });
+    setHoldings(next);
+    setBalance((b) => b + realized);
+    setOrders((list) => [record, ...list]);
+    notify({
+      kind: 'success',
+      title: `Reversed ${symbol}`,
+      body: `Now ${next[symbol].qty > 0 ? 'long' : 'short'} ${+Math.abs(next[symbol].qty).toFixed(3)} shares at ${fmtNum(mark)}. Realized ${fmtSigned(realized)}.`,
+    });
+  };
+
+  const handleCloseAll = () => {
+    if (killSwitch) return;
+    let book = holdings;
+    let total = 0;
+    const records = [];
+    for (const [symbol, h] of Object.entries(holdings)) {
+      const mark = markOf(symbol);
+      const qty = Math.abs(h.qty);
+      const res = fill(book, { side: h.qty > 0 ? 'SELL' : 'BUY', symbol, qty, limit: mark, notional: qty * mark, margin: h.qty < 0, note: 'Close all' });
+      book = res.next;
+      total += res.realized;
+      records.push(res.record);
+    }
+    setHoldings(book);
+    setBalance((b) => b + total);
+    setOrders((list) => [...records.reverse(), ...list]);
+    notify({
+      kind: 'success',
+      title: `Closed ${records.length} position${records.length === 1 ? '' : 's'}`,
+      body: `Realized ${fmtSigned(total)} in total. You're now fully in cash.`,
     });
   };
 
@@ -200,7 +259,7 @@ export default function App() {
         {channel === 'predict' ? (
           <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
         ) : (
-          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} onOrder={handleOrder} notify={notify} />
+          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} holdings={holdings} marks={marks} onOrder={handleOrder} onReverse={handleReverse} onCloseAll={handleCloseAll} notify={notify} />
         )}
 
         <footer className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-ink-3 sm:flex-row sm:items-start sm:justify-between">
