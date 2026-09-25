@@ -4,7 +4,7 @@ import PriceChart from './PriceChart.jsx';
 import { SMART_STAKE_PCT, TRADE_SYMBOLS, fmtNum, fmtUSD, makeSeries, seedFrom, smartStakeCap } from '../data/mock.js';
 import { newRiskQty, reverseBlockReason } from '../data/positions.js';
 
-export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, holdings, marks, onOrder, onReverse, onClose, onCloseAll, notify }) {
+export default function TradeChannel({ killSwitch, balance, tier, nextTier, orders, holdings, marks, onOrder, onReverse, onClose, onCloseAll, onOpenPath, notify }) {
   const [symbol, setSymbol] = useState('SPY');
   const q = TRADE_SYMBOLS.find((s) => s.symbol === symbol);
   const mark = marks[symbol];
@@ -64,7 +64,7 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
           </div>
         </section>
 
-        <PositionsCard holdings={holdings} marks={marks} balance={balance} tier={tier} killSwitch={killSwitch} onReverse={onReverse} onClose={onClose} onCloseAll={onCloseAll} onSelect={setSymbol} />
+        <PositionsCard holdings={holdings} marks={marks} balance={balance} tier={tier} killSwitch={killSwitch} onReverse={onReverse} onClose={onClose} onCloseAll={onCloseAll} onOpenPath={onOpenPath} onSelect={setSymbol} />
 
         <section className="card p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,8 +118,8 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
   );
 }
 
-function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, onClose, onCloseAll, onSelect }) {
-  // { symbol, action: 'reverse' | 'close' } while a row is asking for confirmation
+function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, onClose, onCloseAll, onOpenPath, onSelect }) {
+  // { symbol, action: 'reverse' | 'close' | 'blocked' } while a row is asking for confirmation or explaining
   const [pending, setPending] = useState(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const rows = Object.entries(holdings).map(([symbol, h]) => {
@@ -205,9 +205,8 @@ function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, 
                     {!confirming && (
                       <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={() => setPending({ symbol: p.symbol, action: 'reverse' })}
-                          disabled={Boolean(blocked)}
-                          aria-describedby={blocked ? `rev-why-${p.symbol}` : undefined}
+                          onClick={() => setPending({ symbol: p.symbol, action: blocked ? 'blocked' : 'reverse' })}
+                          disabled={killSwitch}
                           aria-label={`Reverse position in ${p.symbol}`}
                           className="btn-exec inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-brand ring-1 ring-brand/40 enabled:hover:bg-brand-soft"
                         >
@@ -275,10 +274,31 @@ function PositionsCard({ holdings, marks, balance, tier, killSwitch, onReverse, 
                     </div>
                   </div>
                 )}
-                {blocked && (
-                  <p id={`rev-why-${p.symbol}`} className="mt-2 text-sm text-ink-3">
-                    Reverse unavailable: {blocked}
-                  </p>
+                {confirming === 'blocked' && blocked && (
+                  <div role="status" className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gold-soft px-4 py-3">
+                    <p className="flex items-start gap-2 text-sm text-gold-ink">
+                      <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        <span className="font-semibold">Can't reverse {p.symbol} yet.</span> {blocked}
+                      </span>
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setPending(null)} className="rounded-full px-3 py-1.5 text-sm font-medium text-gold-ink hover:bg-surface">
+                        OK
+                      </button>
+                      {long && !tier.margin && (
+                        <button
+                          onClick={() => {
+                            setPending(null);
+                            onOpenPath();
+                          }}
+                          className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-on-brand hover:brightness-110"
+                        >
+                          See how to unlock margin
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
               </li>
             );

@@ -278,7 +278,7 @@ export default function App() {
         {channel === 'predict' ? (
           <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
         ) : (
-          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} holdings={holdings} marks={marks} onOrder={handleOrder} onReverse={handleReverse} onClose={handleClose} onCloseAll={handleCloseAll} notify={notify} />
+          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} holdings={holdings} marks={marks} onOrder={handleOrder} onReverse={handleReverse} onClose={handleClose} onCloseAll={handleCloseAll} onOpenPath={() => setFlywheelOpen(true)} notify={notify} />
         )}
 
         <footer className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-ink-3 sm:flex-row sm:items-start sm:justify-between">
