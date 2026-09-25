@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardCopy, Gauge, Lock, Minus, Percent, Plus, Ruler, ShieldCheck, Target } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, ClipboardCopy, Lock, Minus, Plus } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
 import { SMART_STAKE_PCT, TRADE_SYMBOLS, fmtNum, fmtUSD, makeSeries, seedFrom, smartStakeCap } from '../data/mock.js';
 
@@ -8,134 +8,101 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
   const q = TRADE_SYMBOLS.find((s) => s.symbol === symbol);
   const series = useMemo(() => makeSeries(seedFrom('trade' + symbol), q.price, q.price * 0.0028, 110), [symbol, q.price]);
   const band = { low: q.price - q.expectedMove, high: q.price + q.expectedMove };
+  const up = q.change >= 0;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-      <div className="flex min-w-0 flex-col gap-4">
-        {/* Symbol strip */}
-        <div className="panel flex gap-1 overflow-x-auto p-1.5">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="flex min-w-0 flex-col gap-6">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Symbols">
           {TRADE_SYMBOLS.map((s) => (
             <button
               key={s.symbol}
+              role="tab"
+              aria-selected={s.symbol === symbol}
               onClick={() => setSymbol(s.symbol)}
-              className={`flex shrink-0 items-baseline gap-2 rounded-lg px-3 py-2 font-mono text-xs transition ${
-                s.symbol === symbol ? 'bg-ink-700 text-ink-100' : 'text-ink-300 hover:bg-ink-800 hover:text-ink-100'
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                s.symbol === symbol ? 'bg-ink text-bg' : 'bg-surface text-ink-2 ring-1 ring-line hover:text-ink'
               }`}
             >
-              <span className="font-semibold">{s.symbol}</span>
-              <span className="num">{fmtNum(s.price)}</span>
-              <span className={`num ${s.change >= 0 ? 'text-up' : 'text-down'}`}>
-                {s.change >= 0 ? '+' : ''}
-                {s.change.toFixed(2)}%
-              </span>
+              {s.symbol}
             </button>
           ))}
         </div>
 
-        {/* Mechanical Data Dashboard */}
-        <section className="panel">
-          <div className="panel-header">
-            <div className="flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-terminal" />
-              <p className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-ink-100">Mechanical Data Dashboard</p>
-              <span className="hidden rounded border border-ink-600 px-1.5 py-0.5 font-mono text-[10px] text-ink-400 sm:inline">Market context · not a recommendation</span>
-            </div>
-            <span className="font-mono text-[11px] text-ink-400">
-              {q.symbol} · {q.name}
-            </span>
+        <section className="card p-6 sm:p-8">
+          <p className="text-ink-2">{q.name}</p>
+          <div className="mt-1 flex flex-wrap items-end gap-x-4 gap-y-1">
+            <p className="font-display text-5xl font-semibold tracking-tight text-ink num">{fmtUSD(q.price)}</p>
+            <p className={`flex items-center gap-1 pb-1.5 text-[15px] font-medium num ${up ? 'text-up' : 'text-down'}`}>
+              {up ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+              {Math.abs(q.change).toFixed(2)}% today
+            </p>
           </div>
-          <div className="grid grid-cols-1 divide-y divide-ink-700/80 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            <StatTile
-              icon={Percent}
-              label="IV Rank"
-              value={`${q.ivRank}%`}
-              meter={q.ivRank}
-              note={q.ivRank >= 50 ? 'Elevated — premium selling favored' : 'Moderate — neutral vol regime'}
-              sub={`IV ${q.iv.toFixed(1)}% · 52-wk range`}
-            />
-            <StatTile
-              icon={Ruler}
-              label="Expected Move"
-              value={`±${fmtUSD(q.expectedMove)}`}
-              sub={`${((q.expectedMove / q.price) * 100).toFixed(2)}% · weekly, 1σ`}
-              note={`${fmtNum(band.low)} – ${fmtNum(band.high)}`}
-            />
-            <StatTile
-              icon={Target}
-              label="Probability of Profit"
-              value={`${q.pop}%`}
-              meter={q.pop}
-              sub="Model est. at current strike"
-              note={q.pop >= 60 ? 'Edge: favorable' : 'Edge: marginal'}
-            />
+          <div className="mt-6">
+            <PriceChart data={series} height={240} tone="brand" band={band} format={(v) => fmtNum(v)} />
           </div>
-          <div className="border-t border-ink-700/80 px-2 pb-3 pt-3 sm:px-3">
-            <div className="mb-1 flex items-center justify-between px-2">
-              <p className="label">Price vs. Expected-Move Envelope</p>
-              <span className="flex items-center gap-3 font-mono text-[10px] text-ink-400">
-                <span className="flex items-center gap-1">
-                  <span className="h-0.5 w-3 rounded bg-sky-400" /> {q.symbol}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-0 w-3 border-t border-dashed border-terminal" /> ±1σ EM
-                </span>
-              </span>
-            </div>
-            <PriceChart data={series} height={240} color="#38bdf8" band={band} format={(v) => fmtNum(v)} />
+          <p className="mt-3 flex items-center gap-2 text-sm text-ink-3">
+            <span className="h-3 w-5 rounded-sm bg-gold/30" aria-hidden="true" /> Shaded band: the range the options market expects this week
+          </p>
+        </section>
+
+        <section aria-labelledby="context-title">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="context-title" className="font-display text-xl font-semibold text-ink">
+              Before you trade
+            </h2>
+            <p className="text-sm text-ink-3">Market context from the Mechanical Data Dashboard. Not a recommendation.</p>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <Stat label="IV Rank" value={`${q.ivRank}%`} note={q.ivRank >= 50 ? 'Options cost more than usual compared with the past year.' : 'Options cost about what they usually do this year.'} />
+            <Stat label="Expected move" value={`±${fmtUSD(q.expectedMove)}`} note={`The market expects ${fmtNum(band.low)} to ${fmtNum(band.high)} this week.`} />
+            <Stat label="Probability of profit" value={`${q.pop}%`} note="Estimated for this setup at today's price." />
           </div>
         </section>
 
-        {/* Blotter */}
-        <section className="panel">
-          <div className="panel-header">
-            <p className="label">Order Blotter</p>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[11px] text-ink-400">{orders.length} working</span>
-              <button
-                onClick={() => copyCostBasis(orders, notify)}
-                disabled={orders.length === 0}
-                className="inline-flex items-center gap-1 rounded border border-ink-600 px-2 py-0.5 font-mono text-[10px] text-ink-300 transition enabled:hover:border-terminal/60 enabled:hover:text-terminal disabled:opacity-40"
-              >
-                <ClipboardCopy className="h-3 w-3" /> Copy cost basis CSV
-              </button>
-            </div>
+        <section className="card p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-xl font-semibold text-ink">Your orders</h2>
+            <button
+              onClick={() => copyCostBasis(orders, notify)}
+              disabled={orders.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-brand transition enabled:hover:bg-brand-soft disabled:opacity-45"
+            >
+              <ClipboardCopy className="h-4 w-4" /> Copy cost basis (CSV)
+            </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] font-mono text-xs">
-              <thead>
-                <tr className="text-left text-ink-400">
-                  {['Time', 'Side', 'Symbol', 'Qty', 'Limit', 'Notional', 'Status'].map((h) => (
-                    <th key={h} className={`px-4 py-2 font-medium ${['Qty', 'Limit', 'Notional'].includes(h) ? 'text-right' : ''}`}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-700/60">
-                {orders.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-ink-500">
-                      No orders yet — use the ticket to route a simulated order.
-                    </td>
+          {orders.length === 0 ? (
+            <p className="mt-3 text-sm text-ink-2">No orders yet. Orders you place in this demo show up here.</p>
+          ) : (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[480px] text-sm">
+                <thead>
+                  <tr className="text-left text-ink-3">
+                    <th className="py-2 pr-4 font-medium">Time</th>
+                    <th className="py-2 pr-4 font-medium">Order</th>
+                    <th className="py-2 pr-4 text-right font-medium">Limit</th>
+                    <th className="py-2 pr-4 text-right font-medium">Total</th>
+                    <th className="py-2 font-medium">Status</th>
                   </tr>
-                ) : (
-                  orders.map((o) => (
-                    <tr key={o.id} className="animate-fade-in text-ink-200">
-                      <td className="px-4 py-2 text-ink-400">{o.time}</td>
-                      <td className={`px-4 py-2 font-semibold ${o.side === 'BUY' ? 'text-up' : 'text-down'}`}>{o.side}</td>
-                      <td className="px-4 py-2">{o.symbol}</td>
-                      <td className="px-4 py-2 text-right num">{fmtQty(o.qty)}</td>
-                      <td className="px-4 py-2 text-right num">{fmtNum(o.limit)}</td>
-                      <td className="px-4 py-2 text-right num">{fmtUSD(o.notional)}</td>
-                      <td className="px-4 py-2">
-                        <span className="rounded bg-sky-400/10 px-1.5 py-0.5 text-[10px] text-sky-300">WORKING</span>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {orders.map((o) => (
+                    <tr key={o.id} className="animate-flash text-ink">
+                      <td className="py-3 pr-4 text-ink-3 num">{o.time}</td>
+                      <td className="py-3 pr-4">
+                        <span className={`font-semibold ${o.side === 'BUY' ? 'text-up' : 'text-down'}`}>{o.side === 'BUY' ? 'Buy' : 'Sell'}</span> {fmtQty(o.qty)} {o.symbol}
+                      </td>
+                      <td className="py-3 pr-4 text-right num">{fmtNum(o.limit)}</td>
+                      <td className="py-3 pr-4 text-right num">{fmtUSD(o.notional)}</td>
+                      <td className="py-3">
+                        <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">Working</span>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       </div>
 
@@ -144,20 +111,12 @@ export default function TradeChannel({ killSwitch, balance, tier, nextTier, orde
   );
 }
 
-function StatTile({ icon: Icon, label, value, sub, note, meter }) {
+function Stat({ label, value, note }) {
   return (
-    <div className="p-4 sm:p-5">
-      <p className="label flex items-center gap-1.5">
-        <Icon className="h-3 w-3" /> {label}
-      </p>
-      <p className="mt-2 font-mono text-3xl font-semibold tracking-tight text-ink-100 num">{value}</p>
-      <p className="mt-1 font-mono text-[11px] text-ink-400">{sub}</p>
-      {meter != null && (
-        <div className="mt-3 h-1 overflow-hidden rounded-full bg-ink-700">
-          <div className="h-full rounded-full bg-terminal" style={{ width: `${meter}%` }} />
-        </div>
-      )}
-      <p className="mt-2 text-xs text-ink-300">{note}</p>
+    <div className="rounded-2xl bg-surface p-5 ring-1 ring-line">
+      <p className="text-sm text-ink-2">{label}</p>
+      <p className="mt-1 font-display text-3xl font-semibold text-ink num">{value}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-3">{note}</p>
     </div>
   );
 }
@@ -165,7 +124,6 @@ function StatTile({ icon: Icon, label, value, sub, note, meter }) {
 function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
   const [side, setSide] = useState('BUY');
   const [limit, setLimit] = useState(quote.price.toFixed(2));
-  // fractional shares: default to 1 share, or the largest slice that fits the cap
   const [qty, setQty] = useState(() => Math.min(1, floor3(smartStakeCap(balance, tier) / quote.price)));
   const [useMargin, setUseMargin] = useState(false);
 
@@ -179,167 +137,148 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
   const usage = cap > 0 ? notional / cap : 0;
   const over = notional > cap;
   const maxQty = limitNum > 0 ? floor3(cap / limitNum) : 0;
-  const buyingPower = useMargin ? balance * 2 : balance;
   const invalid = !(qty > 0) || limitNum <= 0;
   const disabled = killSwitch || over || invalid;
   const tierCapped = tier.maxStake && balance * SMART_STAKE_PCT > tier.maxStake;
 
-  const submit = () => {
-    onOrder({ side, symbol: quote.symbol, qty, limit: limitNum, notional, margin: useMargin });
-  };
-
   return (
-    <aside className="panel flex h-fit flex-col xl:sticky xl:top-24">
-      <div className="panel-header">
-        <p className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-ink-100">Order Entry</p>
-        <span className="font-mono text-[11px] text-ink-400">
-          {quote.symbol} · Limit · DAY
+    <aside className="card flex h-fit flex-col gap-5 p-6 lg:sticky lg:top-28">
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-display text-xl font-semibold text-ink">
+          {side === 'BUY' ? 'Buy' : 'Sell'} {quote.symbol}
+        </h2>
+        <span className="text-sm text-ink-3">Limit order, good for today</span>
+      </div>
+
+      <div className="grid grid-cols-2 rounded-full bg-sunken p-1">
+        {['BUY', 'SELL'].map((s) => (
+          <button
+            key={s}
+            onClick={() => setSide(s)}
+            className={`rounded-full py-2 text-[15px] font-semibold transition ${side === s ? 'bg-surface text-ink shadow-card' : 'text-ink-2 hover:text-ink'}`}
+          >
+            {s === 'BUY' ? 'Buy' : 'Sell'}
+          </button>
+        ))}
+      </div>
+
+      <label className="block">
+        <span className="flex justify-between text-sm">
+          <span className="text-ink-2">Shares</span>
+          <span className="text-ink-3 num">Up to {fmtQty(maxQty)}, fractions allowed</span>
         </span>
+        <span className="mt-1.5 flex items-center rounded-xl bg-sunken ring-brand focus-within:ring-2">
+          <button type="button" onClick={() => setQty((n) => floor3(Math.max(0.001, n - (n > 1 ? 1 : 0.1))))} className="p-3 text-ink-2 hover:text-ink" aria-label="Fewer shares">
+            <Minus className="h-4 w-4" />
+          </button>
+          <input
+            id="ticket-qty"
+            type="number"
+            min={0}
+            step="0.001"
+            value={qty}
+            onChange={(e) => setQty(Math.max(0, floor3(parseFloat(e.target.value || '0'))))}
+            className="w-full bg-transparent text-center font-display text-xl font-semibold text-ink outline-none num"
+          />
+          <button type="button" onClick={() => setQty((n) => floor3(n + (n >= 1 ? 1 : 0.1)))} className="p-3 text-ink-2 hover:text-ink" aria-label="More shares">
+            <Plus className="h-4 w-4" />
+          </button>
+        </span>
+      </label>
+
+      <label className="block">
+        <span className="flex justify-between text-sm">
+          <span className="text-ink-2">Limit price</span>
+          <button type="button" onClick={() => setLimit(quote.price.toFixed(2))} className="font-medium text-brand hover:underline">
+            Use {fmtNum(quote.price)}
+          </button>
+        </span>
+        <span className="mt-1.5 flex items-center rounded-xl bg-sunken px-4 ring-brand focus-within:ring-2">
+          <span className="text-ink-3">$</span>
+          <input
+            id="ticket-limit"
+            type="number"
+            step="0.01"
+            value={limit}
+            onChange={(e) => setLimit(e.target.value)}
+            className="w-full bg-transparent py-3 pl-1 font-display text-xl font-semibold text-ink outline-none num"
+          />
+        </span>
+      </label>
+
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[15px] text-ink">Use margin</p>
+          <p className="text-sm text-ink-3">
+            {tier.margin ? `Buying power ${fmtUSD(useMargin ? balance * 2 : balance)}` : `Unlocks at ${nextTier?.name ?? 'Tier B'} with partner approval`}
+          </p>
+        </div>
+        {tier.margin ? (
+          <button
+            role="switch"
+            aria-checked={useMargin}
+            aria-label="Use margin"
+            onClick={() => setUseMargin((m) => !m)}
+            className={`relative h-6 w-10 shrink-0 rounded-full transition ${useMargin ? 'bg-brand' : 'bg-line'}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-all ${useMargin ? 'left-[18px]' : 'left-0.5'}`} />
+          </button>
+        ) : (
+          <Lock className="h-4 w-4 shrink-0 text-ink-3" aria-label="Locked" />
+        )}
       </div>
 
-      <div className="flex flex-col gap-4 p-4">
-        {/* Side */}
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-ink-850 p-1">
-          {['BUY', 'SELL'].map((s) => (
-            <button
-              key={s}
-              onClick={() => setSide(s)}
-              className={`rounded-md py-2 font-mono text-xs font-semibold tracking-wider transition ${
-                side === s
-                  ? s === 'BUY'
-                    ? 'bg-up/15 text-up ring-1 ring-up/50'
-                    : 'bg-down/15 text-down ring-1 ring-down/50'
-                  : 'text-ink-400 hover:bg-ink-800 hover:text-ink-200'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+      <div className={`rounded-2xl p-4 ${over ? 'bg-down-soft' : 'bg-sunken'}`}>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-medium text-ink">Smart Stake</p>
+          <p className="text-sm text-ink-2 num">
+            {fmtUSD(notional)} of {fmtUSD(cap)}
+          </p>
         </div>
-
-        {/* Quantity */}
-        <Field label="Quantity" hint={`Max ${fmtQty(maxQty)} sh · fractional OK`}>
-          <div className="flex items-center rounded-lg border border-ink-600 bg-ink-850 focus-within:border-terminal/70">
-            <button onClick={() => setQty((n) => floor3(Math.max(0.001, n - (n > 1 ? 1 : 0.1))))} className="p-2.5 text-ink-400 hover:text-ink-100" aria-label="Decrease quantity">
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-            <input
-              type="number"
-              min={0}
-              step="0.001"
-              value={qty}
-              onChange={(e) => setQty(Math.max(0, floor3(parseFloat(e.target.value || '0'))))}
-              className="w-full bg-transparent text-center font-mono text-sm text-ink-100 outline-none num"
-            />
-            <button onClick={() => setQty((n) => floor3(n + (n >= 1 ? 1 : 0.1)))} className="p-2.5 text-ink-400 hover:text-ink-100" aria-label="Increase quantity">
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </Field>
-
-        {/* Limit price */}
-        <Field
-          label="Limit Price"
-          hint={
-            <button onClick={() => setLimit(quote.price.toFixed(2))} className="text-terminal hover:underline">
-              Mid {fmtNum(quote.price)}
-            </button>
-          }
-        >
-          <div className="flex items-center rounded-lg border border-ink-600 bg-ink-850 px-3 focus-within:border-terminal/70">
-            <span className="font-mono text-sm text-ink-400">$</span>
-            <input
-              type="number"
-              step="0.01"
-              value={limit}
-              onChange={(e) => setLimit(e.target.value)}
-              className="w-full bg-transparent py-2.5 pl-1 font-mono text-sm text-ink-100 outline-none num"
-            />
-          </div>
-        </Field>
-
-        {/* Margin toggle */}
-        <div className="flex items-center justify-between rounded-lg border border-ink-700 px-3 py-2.5">
-          <div>
-            <p className="text-sm text-ink-200">Use margin</p>
-            <p className="font-mono text-[10px] text-ink-400">{tier.margin ? `Buying power ${fmtUSD(buyingPower)} · partner-approved` : `Locked · requires ${nextTier?.name ?? 'Tier B'} + partner approval`}</p>
-          </div>
-          {tier.margin ? (
-            <button
-              role="switch"
-              aria-checked={useMargin}
-              onClick={() => setUseMargin((m) => !m)}
-              className={`relative h-5 w-9 rounded-full transition ${useMargin ? 'bg-terminal' : 'bg-ink-600'}`}
-            >
-              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${useMargin ? 'left-[18px]' : 'left-0.5'}`} />
-            </button>
-          ) : (
-            <Lock className="h-4 w-4 text-ink-500" />
-          )}
+        <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-surface">
+          <div className={`h-full rounded-full transition-all duration-300 ${over ? 'bg-down' : 'bg-brand'}`} style={{ width: `${Math.min(100, usage * 100)}%` }} />
         </div>
-
-        {/* Smart Stake meter */}
-        <div className={`rounded-lg border p-3 transition ${over ? 'border-down/50 bg-down/5' : 'border-ink-700 bg-ink-850/60'}`}>
-          <div className="flex items-center justify-between">
-            <p className="label flex items-center gap-1.5">
-              <ShieldCheck className={`h-3 w-3 ${over ? 'text-down' : 'text-up'}`} /> Smart Stake
+        <p className="mt-2 text-sm text-ink-3">
+          {tierCapped ? `${tier.name} orders are capped at ${fmtUSD(tier.maxStake, 0)}.` : `Each order can use up to ${SMART_STAKE_PCT * 100}% of your balance.`}
+        </p>
+        {over && (
+          <div className="mt-3 flex items-start justify-between gap-3">
+            <p className="flex items-start gap-2 text-sm text-down">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              {fmtUSD(notional - cap)} over the limit.
             </p>
-            <p className="font-mono text-[11px] text-ink-300 num">
-              {fmtUSD(notional)} / {fmtUSD(cap)}
-            </p>
+            <button type="button" onClick={() => setQty(maxQty)} className="shrink-0 rounded-full bg-surface px-3 py-1 text-sm font-semibold text-down ring-1 ring-down/40 hover:bg-down-soft">
+              Clamp to {fmtQty(maxQty)}
+            </button>
           </div>
-          <div className="relative mt-2.5 h-2 overflow-hidden rounded-full bg-ink-700">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${over ? 'bg-down' : usage > 0.8 ? 'bg-terminal' : 'bg-up'}`}
-              style={{ width: `${Math.min(100, usage * 100)}%` }}
-            />
-          </div>
-          <div className="mt-1.5 flex justify-between font-mono text-[10px] text-ink-500">
-            <span>0%</span>
-            <span>Cap = 25% of equity{tierCapped ? ` · ${tier.name} hard cap ${fmtUSD(tier.maxStake, 0)}` : ''}</span>
-          </div>
-          {over && (
-            <div className="mt-2.5 flex items-start justify-between gap-2 animate-fade-in">
-              <p className="flex items-start gap-1.5 text-xs text-down">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Order exceeds Smart Stake limit by {fmtUSD(notional - cap)}.
-              </p>
-              <button
-                onClick={() => setQty(maxQty)}
-                className="shrink-0 rounded border border-down/40 px-2 py-0.5 font-mono text-[10px] text-down hover:bg-down/10"
-              >
-                Clamp to {fmtQty(maxQty)}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Summary */}
-        <dl className="grid grid-cols-2 gap-y-1.5 font-mono text-[11px]">
-          <dt className="text-ink-400">Est. notional</dt>
-          <dd className="text-right text-ink-100 num">{fmtUSD(notional)}</dd>
-          <dt className="text-ink-400">% of equity</dt>
-          <dd className="text-right text-ink-100 num">{balance > 0 ? ((notional / balance) * 100).toFixed(1) : '0.0'}%</dd>
-          <dt className="text-ink-400">Account type</dt>
-          <dd className="text-right text-ink-100">{useMargin ? 'Margin' : 'Cash'}</dd>
-          <dt className="text-ink-400">Settlement</dt>
-          <dd className="text-right text-ink-100">T+1</dd>
-          <dt className="text-ink-400">Routing</dt>
-          <dd className="text-right text-ink-100">[PARTNER] · best ex</dd>
-        </dl>
-
-        <button
-          onClick={submit}
-          disabled={disabled}
-          className={`btn-exec rounded-lg py-3 text-sm font-semibold tracking-wide text-ink-950 transition enabled:hover:brightness-110 enabled:active:scale-[0.99] ${
-            side === 'BUY' ? 'bg-up enabled:hover:shadow-[0_8px_30px_-10px_rgba(34,197,94,0.7)]' : 'bg-down enabled:hover:shadow-[0_8px_30px_-10px_rgba(244,63,94,0.7)]'
-          }`}
-        >
-          {killSwitch ? 'View-Only Mode' : `${side === 'BUY' ? 'Buy' : 'Sell'} ${fmtQty(qty)} ${quote.symbol} @ ${fmtNum(limitNum)}`}
-        </button>
-        {killSwitch && <p className="-mt-2 text-center font-mono text-[11px] text-down">API Latency: View-Only Mode</p>}
+        )}
       </div>
+
+      <dl className="space-y-2 text-sm">
+        <SummaryRow label="Estimated total" value={fmtUSD(notional)} strong />
+        <SummaryRow label="Share of your balance" value={`${balance > 0 ? ((notional / balance) * 100).toFixed(1) : '0.0'}%`} />
+        <SummaryRow label="Settles" value="Next business day" />
+        <SummaryRow label="Sent through" value="[PARTNER]" />
+      </dl>
+
+      <button
+        onClick={() => onOrder({ side, symbol: quote.symbol, qty, limit: limitNum, notional, margin: useMargin })}
+        disabled={disabled}
+        className="btn-exec rounded-full bg-brand py-3.5 text-base font-semibold text-on-brand transition enabled:hover:brightness-110 enabled:active:scale-[0.99]"
+      >
+        {killSwitch ? 'Trading paused' : `${side === 'BUY' ? 'Buy' : 'Sell'} ${fmtQty(qty)} ${quote.symbol} at ${fmtNum(limitNum)}`}
+      </button>
+      {killSwitch && <p className="-mt-2 text-center text-sm text-down">API Latency: View-Only Mode</p>}
     </aside>
+  );
+}
+
+function SummaryRow({ label, value, strong }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="text-ink-2">{label}</dt>
+      <dd className={`num ${strong ? 'font-semibold text-ink' : 'text-ink'}`}>{value}</dd>
+    </div>
   );
 }
 
@@ -347,8 +286,8 @@ function OrderTicket({ quote, balance, tier, nextTier, killSwitch, onOrder }) {
 function copyCostBasis(orders, notify) {
   const rows = [['time', 'side', 'symbol', 'qty', 'limit', 'notional', 'account'], ...orders.map((o) => [o.time, o.side, o.symbol, o.qty, o.limit.toFixed(2), o.notional.toFixed(2), o.margin ? 'margin' : 'cash'])];
   const csv = rows.map((r) => r.join(',')).join('\n');
-  const done = () => notify({ kind: 'success', title: 'Cost basis copied', body: `${orders.length} order${orders.length === 1 ? '' : 's'} as CSV · paste into a spreadsheet` });
-  const fail = () => notify({ kind: 'warning', title: 'Could not copy', body: 'Clipboard access was blocked by the browser' });
+  const done = () => notify({ kind: 'success', title: 'Cost basis copied', body: `${orders.length} order${orders.length === 1 ? '' : 's'} as CSV. Paste it into a spreadsheet.` });
+  const fail = () => notify({ kind: 'warning', title: "Couldn't copy", body: 'Your browser blocked clipboard access.' });
   try {
     navigator.clipboard.writeText(csv).then(done, fail);
   } catch {
@@ -358,15 +297,3 @@ function copyCostBasis(orders, notify) {
 
 const floor3 = (n) => Math.floor(n * 1000) / 1000;
 const fmtQty = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(3).replace(/0+$/, ''));
-
-function Field({ label, hint, children }) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="label">{label}</span>
-        <span className="font-mono text-[10px] text-ink-400">{hint}</span>
-      </div>
-      {children}
-    </div>
-  );
-}

@@ -1,14 +1,12 @@
-import { BarChart3, Zap } from 'lucide-react';
-
 const CHANNELS = [
-  { id: 'predict', label: 'PREDICT', sub: 'Velocity Engine', icon: Zap },
-  { id: 'trade', label: 'TRADE', sub: 'Wealth Builder', icon: BarChart3 },
+  { id: 'predict', label: 'Predict' },
+  { id: 'trade', label: 'Trade' },
 ];
 
 export default function ChannelToggle({ channel, onChange }) {
   return (
-    <div className="inline-flex w-full rounded-xl border border-ink-700 bg-ink-900 p-1 sm:w-auto" role="tablist">
-      {CHANNELS.map(({ id, label, sub, icon: Icon }) => {
+    <div className="inline-flex w-full rounded-full bg-sunken p-1 sm:w-auto" role="tablist" aria-label="Channel">
+      {CHANNELS.map(({ id, label }) => {
         const active = channel === id;
         return (
           <button
@@ -16,15 +14,11 @@ export default function ChannelToggle({ channel, onChange }) {
             role="tab"
             aria-selected={active}
             onClick={() => onChange(id)}
-            className={`group flex flex-1 items-center gap-2.5 rounded-lg px-4 py-2 text-left transition sm:flex-none sm:px-5 ${
-              active ? 'bg-ink-700 shadow-inner shadow-black/40' : 'hover:bg-ink-800'
+            className={`flex-1 rounded-full px-6 py-2 text-[15px] font-semibold transition sm:flex-none ${
+              active ? 'bg-surface text-ink shadow-card' : 'text-ink-2 hover:text-ink'
             }`}
           >
-            <Icon className={`h-4 w-4 ${active ? 'text-terminal' : 'text-ink-400 group-hover:text-ink-200'}`} />
-            <span className="leading-tight">
-              <span className={`block font-mono text-xs font-semibold tracking-[0.18em] ${active ? 'text-ink-100' : 'text-ink-300'}`}>{label}</span>
-              <span className="block text-[11px] text-ink-400">{sub}</span>
-            </span>
+            {label}
           </button>
         );
       })}

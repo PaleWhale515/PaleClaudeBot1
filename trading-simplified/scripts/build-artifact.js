@@ -9,11 +9,9 @@ const css = readFileSync('dist-artifact/app.css', 'utf8');
 const html = `<title>Trading Simplified</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
-:root { color-scheme: dark; }
-body { background: #07090d; color: #e4e8ee; }
-.boot { min-height: 60vh; display: grid; place-items: center; padding-inline: 16px; font: 14px/1.5 Inter, system-ui, sans-serif; color: #8792a3; text-align: center; }
+.boot { min-height: 60vh; display: grid; place-items: center; padding-inline: 16px; font: 15px/1.5 Figtree, system-ui, sans-serif; color: rgb(var(--ink-3)); text-align: center; }
 ${css}
 </style>
 <div id="root"><div class="boot"><p>Loading Trading Simplified…<br>If this message stays, reload the page.</p></div></div>

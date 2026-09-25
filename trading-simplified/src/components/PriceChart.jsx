@@ -1,16 +1,18 @@
 import { useMemo, useRef, useState } from 'react';
 
 /**
- * Minimal single-series area chart with crosshair + tooltip.
- * Optional `band` draws a shaded ±expected-move envelope around the last price.
+ * Single-series area chart with a hover crosshair. Colors are theme tokens
+ * (e.g. 'up', 'down', 'brand') so the chart follows light and dark mode.
+ * Optional `band` shades an expected-move range; `baseline` draws a reference line.
  */
-export default function PriceChart({ data, height = 260, color = '#22c55e', band, format = (v) => v.toFixed(2), baseline }) {
+export default function PriceChart({ data, height = 260, tone = 'brand', band, baseline, baselineLabel = 'Strike', format = (v) => v.toFixed(2) }) {
   const ref = useRef(null);
   const [hover, setHover] = useState(null);
   const W = 800;
   const H = height;
-  const padR = 64;
-  const padY = 16;
+  const padR = 8;
+  const padY = 14;
+  const color = `rgb(var(--${tone}))`;
 
   const { min, max, path, area, xs, ys } = useMemo(() => {
     let lo = Math.min(...data);
@@ -23,7 +25,7 @@ export default function PriceChart({ data, height = 260, color = '#22c55e', band
       lo = Math.min(lo, baseline);
       hi = Math.max(hi, baseline);
     }
-    const pad = (hi - lo) * 0.08 || 1;
+    const pad = (hi - lo) * 0.1 || 1;
     lo -= pad;
     hi += pad;
     const xs = data.map((_, i) => (i / (data.length - 1)) * (W - padR));
@@ -34,19 +36,18 @@ export default function PriceChart({ data, height = 260, color = '#22c55e', band
   }, [data, band, baseline, H]);
 
   const yOf = (v) => padY + (1 - (v - min) / (max - min)) * (H - padY * 2);
-  const grid = [0.2, 0.4, 0.6, 0.8].map((f) => min + (max - min) * f);
-  const gid = `g-${color.replace('#', '')}`;
-  const last = data[data.length - 1];
+  const gid = `fill-${tone}`;
+  const lastX = xs[xs.length - 1];
+  const lastY = ys[ys.length - 1];
 
   const onMove = (e) => {
     const rect = ref.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * W;
-    const i = Math.max(0, Math.min(data.length - 1, Math.round((x / (W - padR)) * (data.length - 1))));
-    setHover(i);
+    setHover(Math.max(0, Math.min(data.length - 1, Math.round((x / (W - padR)) * (data.length - 1)))));
   };
 
   return (
-    <div className="relative w-full select-none" style={{ aspectRatio: `${W} / ${H}` }}>
+    <div className="relative w-full max-w-full select-none" style={{ aspectRatio: `${W} / ${H}` }}>
       <svg
         ref={ref}
         viewBox={`0 0 ${W} ${H}`}
@@ -59,52 +60,45 @@ export default function PriceChart({ data, height = 260, color = '#22c55e', band
       >
         <defs>
           <linearGradient id={gid} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.22" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
+            <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.16 }} />
+            <stop offset="100%" style={{ stopColor: color, stopOpacity: 0 }} />
           </linearGradient>
         </defs>
-        {grid.map((g) => (
-          <line key={g} x1="0" x2={W - padR} y1={yOf(g)} y2={yOf(g)} stroke="#1c2430" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
-        ))}
         {band && (
-          <>
-            <rect x={0} width={W - padR} y={yOf(band.high)} height={yOf(band.low) - yOf(band.high)} fill="#f5a524" opacity="0.06" />
-            <line x1="0" x2={W - padR} y1={yOf(band.high)} y2={yOf(band.high)} stroke="#f5a524" strokeOpacity="0.55" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-            <line x1="0" x2={W - padR} y1={yOf(band.low)} y2={yOf(band.low)} stroke="#f5a524" strokeOpacity="0.55" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-          </>
+          <rect x={0} width={W} y={yOf(band.high)} height={yOf(band.low) - yOf(band.high)} style={{ fill: 'rgb(var(--gold))', opacity: 0.12 }} />
         )}
         {baseline != null && (
-          <line x1="0" x2={W - padR} y1={yOf(baseline)} y2={yOf(baseline)} stroke="#5b6678" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />
+          <line x1="0" x2={W} y1={yOf(baseline)} y2={yOf(baseline)} strokeDasharray="5 6" vectorEffect="non-scaling-stroke" style={{ stroke: 'rgb(var(--ink-3))', strokeOpacity: 0.7 }} />
         )}
-        <path d={area} fill={`url(#${gid})`} />
-        <path d={path} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-        {hover != null && (
-          <line x1={xs[hover]} x2={xs[hover]} y1="0" y2={H} stroke="#5b6678" vectorEffect="non-scaling-stroke" />
-        )}
+        <path d={area} style={{ fill: `url(#${gid})` }} />
+        <path d={path} fill="none" strokeWidth="2.25" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" style={{ stroke: color }} />
+        {hover != null && <line x1={xs[hover]} x2={xs[hover]} y1="0" y2={H} vectorEffect="non-scaling-stroke" style={{ stroke: 'rgb(var(--line))' }} />}
       </svg>
 
-      {/* HTML overlays keep text crisp regardless of SVG stretching */}
       <div className="pointer-events-none absolute inset-0">
-        <PriceTag top={(yOf(last) / H) * 100} color={color} label={format(last)} />
+        <span
+          className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ring-surface"
+          style={{ left: `${(lastX / W) * 100}%`, top: `${(lastY / H) * 100}%`, background: color }}
+        />
         {band && (
           <>
-            <AxisLabel top={(yOf(band.high) / H) * 100} text={`+EM ${format(band.high)}`} className="text-terminal" />
-            <AxisLabel top={(yOf(band.low) / H) * 100} text={`−EM ${format(band.low)}`} className="text-terminal" />
+            <Tag top={(yOf(band.high) / H) * 100} text={`High ${format(band.high)}`} />
+            <Tag top={(yOf(band.low) / H) * 100} text={`Low ${format(band.low)}`} />
           </>
         )}
-        {baseline != null && <AxisLabel top={(yOf(baseline) / H) * 100} text={`Strike ${format(baseline)}`} className="text-ink-300" />}
+        {baseline != null && <Tag top={(yOf(baseline) / H) * 100} text={`${baselineLabel} ${format(baseline)}`} />}
         {hover != null && (
           <>
-            <div
-              className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink-900"
+            <span
+              className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ring-surface"
               style={{ left: `${(xs[hover] / W) * 100}%`, top: `${(ys[hover] / H) * 100}%`, background: color }}
             />
-            <div
-              className="absolute top-2 -translate-x-1/2 rounded-md border border-ink-600 bg-ink-850/95 px-2 py-1 font-mono text-[11px] text-ink-100 shadow-lg"
-              style={{ left: `${Math.min(88, Math.max(8, (xs[hover] / W) * 100))}%` }}
+            <span
+              className="absolute top-0 -translate-x-1/2 rounded-lg bg-ink px-2 py-1 text-xs font-medium text-bg shadow-pop num"
+              style={{ left: `${Math.min(90, Math.max(10, (xs[hover] / W) * 100))}%` }}
             >
-              <span className="text-ink-400">T−{data.length - 1 - hover}m</span> <span className="num">{format(data[hover])}</span>
-            </div>
+              {format(data[hover])} · {data.length - 1 - hover} min ago
+            </span>
           </>
         )}
       </div>
@@ -112,21 +106,10 @@ export default function PriceChart({ data, height = 260, color = '#22c55e', band
   );
 }
 
-function PriceTag({ top, color, label }) {
+function Tag({ top, text }) {
   return (
-    <div
-      className="absolute right-0 -translate-y-1/2 rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold text-ink-950 num"
-      style={{ top: `${top}%`, background: color }}
-    >
-      {label}
-    </div>
-  );
-}
-
-function AxisLabel({ top, text, className = '' }) {
-  return (
-    <div className={`absolute right-0 -translate-y-1/2 font-mono text-[10px] num ${className}`} style={{ top: `${top}%` }}>
+    <span className="absolute left-0 -translate-y-full pb-1 text-xs text-ink-3 num" style={{ top: `${top}%` }}>
       {text}
-    </div>
+    </span>
   );
 }

@@ -1,179 +1,147 @@
-import { ArrowRight, BarChart3, GraduationCap, Layers, Power, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import Logo from './Logo.jsx';
 import { KILL_SWITCH_MS, SMART_STAKE_PCT, TIERS, fmtUSD } from '../data/mock.js';
 
 const CHANNELS = [
   {
-    icon: Zap,
-    name: 'PREDICT',
-    sub: 'Velocity Engine',
-    body: 'New users start with binary index event contracts. Every position has a fixed maximum loss, shown before they confirm, and is a real exchange order routed through the partner.',
-    facts: ['$20 fixed stake at Tier A', 'Centrally cleared', 'No internal book'],
+    name: 'Predict',
+    body: 'New users start with simple up-or-down questions on market indexes. Each has a fixed maximum loss shown before they confirm, and each is a real exchange order routed through the partner.',
   },
   {
-    icon: BarChart3,
-    name: 'TRADE',
-    sub: 'Wealth Builder',
-    body: 'Stocks and options with a Mechanical Data Dashboard (IV Rank, Expected Move, Probability of Profit) shown as market context beside a limit-order ticket.',
-    facts: ['Cash account first (T+1)', 'Smart Stake cap on every order', 'Routed via partner'],
+    name: 'Trade',
+    body: 'Stocks and options with plain-language market context (IV Rank, expected move, probability of profit) beside a simple limit-order ticket.',
   },
   {
-    icon: GraduationCap,
-    name: 'GRADUATION',
-    sub: 'Flywheel',
-    body: 'Access expands only when account value and a discipline audit both qualify. Trading Simplified recommends each upgrade; the partner approves it.',
-    facts: ['Balance + discipline', 'Partner approval', 'Limits shrink automatically'],
+    name: 'Graduate',
+    body: 'Access grows only when account value and a discipline check both qualify. We recommend each upgrade. The partner approves it.',
   },
 ];
 
 const CONTROLS = [
-  { icon: ShieldCheck, title: 'Smart Stake', body: `No order above ${SMART_STAKE_PCT * 100}% of equity or the tier limit ever leaves the platform.` },
-  { icon: Power, title: 'Safe-State kill switch', body: `Order routing stops if partner execution-API latency exceeds ${KILL_SWITCH_MS} ms. Market data stays live.` },
-  { icon: GraduationCap, title: 'Partner-approved access', body: 'Margin and options approval stays with the partner under FINRA Rules 4210 and 2360.' },
+  { title: 'Smart Stake', body: `No order above ${SMART_STAKE_PCT * 100}% of the balance or the tier limit ever leaves the platform.` },
+  { title: 'Safe-State switch', body: `Trading pauses if the partner's execution API is slower than ${KILL_SWITCH_MS} ms. Prices stay live.` },
+  { title: 'Partner approval', body: 'Margin and options approval stays with the partner, under FINRA Rules 4210 and 2360.' },
 ];
 
 const STEPS = [
-  { title: 'Place a prediction', body: 'On PREDICT, tap UP or DOWN. Note the fixed stake, the disclosed fee and the routing rows.' },
-  { title: 'Hit the risk limit', body: 'On TRADE, raise the quantity until the Smart Stake meter turns red, then use Clamp.' },
-  { title: 'Trip the kill switch', body: 'Turn on the Safe-State switch in the header. Every execution button locks.' },
-  { title: 'Graduate a user', body: 'Open the Tier badge, choose $2,450, and submit for partner approval. Margin unlocks at Tier B.' },
+  { title: 'Make a prediction', body: 'On Predict, tap Up or Down. Note the fixed stake and fee.' },
+  { title: 'Hit the risk limit', body: 'On Trade, add shares until Smart Stake stops the order.' },
+  { title: 'Pause trading', body: 'Turn on the Safe-State switch in the header.' },
+  { title: 'Graduate a user', body: 'Open your balance, choose $2,450 and submit for approval.' },
 ];
 
 export default function IntroScreen({ onEnter }) {
   return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto bg-ink-950" role="dialog" aria-modal="true" aria-labelledby="intro-title">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(900px 500px at 85% -5%, rgba(245,165,36,0.08), transparent 60%), radial-gradient(700px 400px at -10% 100%, rgba(56,189,248,0.05), transparent 60%)',
-        }}
-      />
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-10 px-4 pb-12 pt-[calc(env(safe-area-inset-top,0px)+2rem)] sm:px-6 lg:pt-14">
-        {/* Hero */}
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-terminal to-amber-600">
-                <Layers className="h-4 w-4 text-ink-950" strokeWidth={2.5} />
-              </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">Partner preview · v3.8 prototype</span>
-            </div>
-            <h1 id="intro-title" className="mt-5 text-3xl font-semibold tracking-tight text-ink-100 sm:text-5xl" style={{ textWrap: 'balance' }}>
-              Trading Simplified
+    <div className="fixed inset-0 z-[70] overflow-y-auto bg-bg" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+      <div className="mx-auto flex max-w-5xl flex-col gap-14 px-4 pb-16 pt-[calc(env(safe-area-inset-top,0px)+2rem)] sm:px-6 lg:pt-16">
+        <header className="flex flex-col gap-8">
+          <div className="flex items-center justify-between gap-4">
+            <Logo />
+            <span className="rounded-full bg-gold-soft px-3 py-1 text-sm font-medium text-gold-ink">Partner preview</span>
+          </div>
+          <div className="max-w-3xl">
+            <h1 id="intro-title" className="font-display text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-6xl">
+              The on-ramp from first trade to margin-ready.
             </h1>
-            <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-300 sm:text-lg">
-              A risk-first onboarding platform for regulated partners. New retail investors start with fixed-risk positions and earn
-              margin access through a documented record of disciplined trading.
+            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-2">
+              Trading Simplified helps a regulated partner bring in new retail investors. They start with small, fixed-risk positions and earn more access through a
+              documented record of disciplined trading.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row lg:flex-col lg:items-stretch">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => onEnter('predict')}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-terminal px-5 py-3 text-sm font-semibold text-ink-950 transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terminal"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 font-semibold text-on-brand transition hover:brightness-110"
             >
               Open the prototype <ArrowRight className="h-4 w-4" />
             </button>
-            <button
-              onClick={() => onEnter('trade')}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-ink-600 px-5 py-3 text-sm text-ink-200 transition hover:border-terminal/60 hover:text-terminal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terminal"
-            >
-              Start in TRADE
+            <button onClick={() => onEnter('trade')} className="rounded-full px-6 py-3.5 font-semibold text-ink ring-1 ring-line transition hover:bg-surface">
+              Start on Trade
             </button>
           </div>
         </header>
 
-        {/* Channels */}
-        <section aria-label="How it works" className="grid gap-3 md:grid-cols-3">
-          {CHANNELS.map(({ icon: Icon, name, sub, body, facts }) => (
-            <article key={name} className="flex flex-col gap-3 rounded-xl border border-ink-700 bg-ink-900/80 p-5">
-              <div className="flex items-center gap-2.5">
-                <Icon className="h-4 w-4 text-terminal" />
-                <p className="font-mono text-xs font-semibold tracking-[0.18em] text-ink-100">{name}</p>
-                <span className="text-xs text-ink-400">{sub}</span>
-              </div>
-              <p className="text-sm leading-relaxed text-ink-300">{body}</p>
-              <ul className="mt-auto flex flex-wrap gap-1.5 pt-1">
-                {facts.map((f) => (
-                  <li key={f} className="rounded border border-ink-600 px-1.5 py-0.5 font-mono text-[10px] text-ink-300">
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </article>
+        <section aria-label="How it works" className="grid gap-8 border-t border-line pt-10 md:grid-cols-3">
+          {CHANNELS.map((c, i) => (
+            <div key={c.name}>
+              <p className="font-display text-sm font-semibold text-gold-ink">Step {i + 1}</p>
+              <h2 className="mt-1 font-display text-2xl font-semibold text-ink">{c.name}</h2>
+              <p className="mt-2 leading-relaxed text-ink-2">{c.body}</p>
+            </div>
           ))}
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr]">
-          {/* Tiers */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <section aria-labelledby="tiers-title" className="min-w-0">
-            <h2 id="tiers-title" className="label mb-3">Graduated access</h2>
-            <div className="overflow-x-auto rounded-xl border border-ink-700">
-              <table className="w-full min-w-[460px] text-left text-sm">
-                <thead className="whitespace-nowrap bg-ink-900 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-400">
+            <h2 id="tiers-title" className="font-display text-2xl font-semibold text-ink">
+              Access grows in three tiers
+            </h2>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[440px] text-left">
+                <thead className="text-sm text-ink-3">
                   <tr>
-                    <th className="px-4 py-2.5 font-medium">Tier</th>
-                    <th className="px-4 py-2.5 font-medium">Account value</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Predict</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Max / order</th>
-                    <th className="px-4 py-2.5 font-medium">Access</th>
+                    <th className="whitespace-nowrap py-2 pr-4 font-medium">Tier</th>
+                    <th className="whitespace-nowrap py-2 pr-4 font-medium">Balance</th>
+                    <th className="whitespace-nowrap py-2 pr-4 text-right font-medium">Prediction</th>
+                    <th className="whitespace-nowrap py-2 pr-4 text-right font-medium">Per order</th>
+                    <th className="py-2 font-medium">Account</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-ink-700/70 bg-ink-900/50">
+                <tbody className="divide-y divide-line border-t border-line">
                   {TIERS.map((t) => (
-                    <tr key={t.id}>
-                      <td className="px-4 py-3">
-                        <span className="inline-grid h-6 w-6 place-items-center rounded bg-terminal/15 font-mono text-xs font-bold text-terminal">{t.id}</span>
+                    <tr key={t.id} className="text-ink">
+                      <td className="py-3 pr-4">
+                        <span className="grid h-7 w-7 place-items-center rounded-full bg-gold font-display text-sm font-bold text-ink">{t.id}</span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-200 num">{t.range}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs text-ink-100 num">{fmtUSD(t.predictStake, 0)}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right font-mono text-xs text-ink-100 num">{t.maxStake ? fmtUSD(t.maxStake, 0) : 'Partner-set'}</td>
-                      <td className="px-4 py-3 text-xs text-ink-300">{t.margin ? 'Margin eligible · partner approval' : 'Cash only · T+1'}</td>
+                      <td className="whitespace-nowrap py-3 pr-4 num">{t.range}</td>
+                      <td className="py-3 pr-4 text-right num">{fmtUSD(t.predictStake, 0)}</td>
+                      <td className="whitespace-nowrap py-3 pr-4 text-right num">{t.maxStake ? fmtUSD(t.maxStake, 0) : 'Partner-set'}</td>
+                      <td className="py-3 text-ink-2">{t.margin ? 'Margin, once approved' : 'Cash only'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-xs text-ink-500">The 25% Smart Stake cap applies at every tier. Tier C Predict stake is a placeholder.</p>
+            <p className="mt-3 text-sm text-ink-3">The 25% Smart Stake cap applies at every tier. The Tier C prediction amount is a placeholder.</p>
 
-            <h2 className="label mb-3 mt-8">Built-in risk controls</h2>
-            <ul className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {CONTROLS.map(({ icon: Icon, title, body }) => (
-                <li key={title} className="flex flex-col gap-1.5">
-                  <p className="flex items-center gap-2 text-sm font-medium text-ink-100">
-                    <Icon className="h-4 w-4 text-up" /> {title}
-                  </p>
-                  <p className="text-xs leading-relaxed text-ink-400">{body}</p>
-                </li>
+            <h2 className="mt-10 font-display text-2xl font-semibold text-ink">Risk controls on every order</h2>
+            <dl className="mt-4 grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+              {CONTROLS.map((c) => (
+                <div key={c.title}>
+                  <dt className="font-semibold text-ink">{c.title}</dt>
+                  <dd className="mt-1 text-sm leading-relaxed text-ink-2">{c.body}</dd>
+                </div>
               ))}
-            </ul>
+            </dl>
           </section>
 
-          {/* Demo path */}
-          <section aria-labelledby="tour-title" className="rounded-xl border border-terminal/30 bg-gradient-to-br from-terminal/[0.07] to-transparent p-5">
-            <h2 id="tour-title" className="label">Try it in four steps</h2>
-            <ol className="mt-4 flex flex-col gap-4">
+          <section aria-labelledby="tour-title" className="card h-fit p-6 sm:p-8">
+            <h2 id="tour-title" className="font-display text-2xl font-semibold text-ink">
+              Try it in four steps
+            </h2>
+            <ol className="mt-5 space-y-5">
               {STEPS.map((s, i) => (
-                <li key={s.title} className="flex gap-3">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-terminal/50 font-mono text-[11px] text-terminal">{i + 1}</span>
+                <li key={s.title} className="flex gap-4">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-soft font-display text-sm font-bold text-brand">{i + 1}</span>
                   <div>
-                    <p className="text-sm font-medium text-ink-100">{s.title}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-ink-400">{s.body}</p>
+                    <p className="font-semibold text-ink">{s.title}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-ink-2">{s.body}</p>
                   </div>
                 </li>
               ))}
             </ol>
             <button
               onClick={() => onEnter('predict')}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-terminal/50 py-2.5 text-sm font-medium text-terminal transition hover:bg-terminal/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terminal"
+              className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 font-semibold text-on-brand transition hover:brightness-110"
             >
               Start with step 1 <ArrowRight className="h-4 w-4" />
             </button>
           </section>
         </div>
 
-        <footer className="border-t border-ink-800 pt-4 text-[11px] leading-relaxed text-ink-500">
-          Prototype with simulated market data, balances and fills. In production, custody, execution and account approval are provided by
-          a regulated partner. Not an offer to buy or sell securities or event contracts.
+        <footer className="border-t border-line pt-6 text-sm leading-relaxed text-ink-3">
+          This prototype uses simulated prices, balances and fills. In production, custody, execution and account approval come from a regulated partner. Not an
+          offer to buy or sell securities or event contracts.
         </footer>
       </div>
     </div>

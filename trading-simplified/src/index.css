@@ -2,35 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Trading Simplified identity. Colors are RGB triplets so Tailwind can apply opacity.
+   Light is the default; dark follows the OS unless the page or the viewer sets data-theme. */
+:root {
+  --bg: 243 244 240;          /* #F3F4F0 paper */
+  --surface: 251 251 249;     /* #FBFBF9 */
+  --sunken: 236 238 233;      /* #ECEEE9 */
+  --line: 220 223 216;        /* #DCDFD8 */
+  --ink: 21 27 34;            /* #151B22 */
+  --ink-2: 72 81 92;          /* #48515C */
+  --ink-3: 95 104 115;        /* #5F6873 */
+  --brand: 39 72 216;         /* #2748D8 cobalt */
+  --brand-soft: 230 235 253;  /* #E6EBFD */
+  --on-brand: 248 249 255;    /* #F8F9FF */
+  --up: 11 122 82;            /* #0B7A52 */
+  --up-soft: 227 243 235;     /* #E3F3EB */
+  --down: 191 58 43;          /* #BF3A2B */
+  --down-soft: 251 233 230;   /* #FBE9E6 */
+  --gold: 233 168 38;         /* #E9A826 marigold, fills only */
+  --gold-soft: 251 241 218;   /* #FBF1DA */
+  --gold-ink: 122 83 0;       /* #7A5300 */
+  --shadow: 21 27 34;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: 15 18 22; --surface: 22 26 32; --sunken: 29 34 42; --line: 42 49 59;
+    --ink: 238 240 242; --ink-2: 179 186 196; --ink-3: 147 156 167;
+    --brand: 143 163 255; --brand-soft: 30 38 69; --on-brand: 15 18 22;
+    --up: 67 201 143; --up-soft: 18 40 31; --down: 255 127 110; --down-soft: 46 23 20;
+    --gold: 240 184 74; --gold-soft: 43 35 16; --gold-ink: 245 207 122; --shadow: 0 0 0;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: 15 18 22; --surface: 22 26 32; --sunken: 29 34 42; --line: 42 49 59;
+  --ink: 238 240 242; --ink-2: 179 186 196; --ink-3: 147 156 167;
+  --brand: 143 163 255; --brand-soft: 30 38 69; --on-brand: 15 18 22;
+  --up: 67 201 143; --up-soft: 18 40 31; --down: 255 127 110; --down-soft: 46 23 20;
+  --gold: 240 184 74; --gold-soft: 43 35 16; --gold-ink: 245 207 122; --shadow: 0 0 0;
+  color-scheme: dark;
+}
+
 @layer base {
-  html { color-scheme: dark; }
   body {
-    font-feature-settings: 'cv11', 'ss01';
-    background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(245, 165, 36, 0.05), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, rgba(56, 189, 248, 0.04), transparent 60%),
-      #07090d;
+    @apply bg-bg font-sans text-ink antialiased;
+    font-size: 15px;
     min-height: 100vh;
   }
+  h1, h2, h3 { text-wrap: balance; }
   .num { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid rgb(var(--brand)); outline-offset: 2px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
 }
 
 @layer components {
-  .panel {
-    @apply rounded-xl border border-ink-700/80 bg-ink-900/80 backdrop-blur-sm;
-  }
-  .panel-header {
-    @apply flex items-center justify-between border-b border-ink-700/80 px-4 py-3;
-  }
-  .label {
-    @apply font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-400;
-  }
-  .btn-exec:disabled {
-    @apply cursor-not-allowed opacity-40 grayscale;
-  }
+  .card { @apply rounded-card bg-surface shadow-card; }
+  .eyebrow { @apply text-sm font-medium text-ink-3; }
+  .btn-exec:disabled { @apply cursor-not-allowed opacity-45; }
 }
 
-/* number input spinners off — we ship our own steppers */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type='number'] { -moz-appearance: textfield; }

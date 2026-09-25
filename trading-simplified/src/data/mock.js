@@ -10,14 +10,14 @@ export const TIERS = [
   {
     id: 'A',
     name: 'Tier A',
-    title: 'Foundation',
+    title: 'Starter',
     min: 0,
     max: 1999.99,
     range: '< $2,000',
     predictStake: 20,
     maxStake: 500,
     margin: false,
-    perks: ['Cash account only · T+1 settlement', '$20 Predict stake', '$500 max per order'],
+    perks: ['Cash account, trades settle next business day', '$20 per prediction', 'Up to $500 per order'],
   },
   {
     id: 'B',
@@ -29,12 +29,12 @@ export const TIERS = [
     predictStake: 100,
     maxStake: 2500,
     margin: true,
-    perks: ['Margin eligible · partner approval', '$100 Predict stake', '$2,500 max per order'],
+    perks: ['Margin, once the partner approves', '$100 per prediction', 'Up to $2,500 per order'],
   },
   {
     id: 'C',
     name: 'Tier C',
-    title: 'Institutional',
+    title: 'Advanced',
     min: 10000,
     max: Infinity,
     range: '$10,000+',
@@ -42,7 +42,7 @@ export const TIERS = [
     predictStake: 500,
     maxStake: null,
     margin: true,
-    perks: ['Expanded limits · partner approval', 'Partner-defined max per order', '25% Smart Stake still enforced'],
+    perks: ['Higher limits, once the partner approves', 'Order limits set by the partner', 'The 25% Smart Stake cap still applies'],
   },
 ];
 
@@ -55,10 +55,10 @@ export const PREDICT_FEE_PER_CONTRACT = 0.01;
 /** Mock discipline audit. `gap` simulates a user who fails one check. */
 export function disciplineAudit(gap = false) {
   return [
-    { label: 'Smart Stake adherence', value: '100%', pass: true },
-    { label: 'Orders with defined exit', value: gap ? '71%' : '92%', pass: !gap, need: '≥ 80%' },
-    { label: 'Max drawdown (30d)', value: '−6.4%', pass: true, need: '≤ 15%' },
-    { label: 'Trading days active', value: '20 / 20', pass: true },
+    { label: 'Stayed within Smart Stake limits', value: '100%', pass: true },
+    { label: 'Orders with a planned exit', value: gap ? '71%' : '92%', pass: !gap, need: 'Needs 80%' },
+    { label: 'Largest drop in 30 days', value: '−6.4%', pass: true, need: 'Limit 15%' },
+    { label: 'Active trading days', value: '19 of 21', pass: true },
   ];
 }
 
@@ -75,9 +75,10 @@ export function smartStakeCap(balance, tier = tierFor(balance)) {
 export const PREDICT_MARKETS = [
   {
     id: 'spy-close',
+    label: 'SPY today',
     symbol: 'SPY',
-    title: 'SPY closes higher today?',
-    subtitle: 'Settles 4:00 PM ET vs. prior close $656.42',
+    title: 'Will SPY close higher today?',
+    subtitle: 'Compared with yesterday’s close of $656.42. Settles at 4:00 p.m. ET.',
     base: 658.1,
     vol: 0.35,
     upPrice: 0.57,
@@ -86,9 +87,10 @@ export const PREDICT_MARKETS = [
   },
   {
     id: 'ndx-hour',
+    label: 'Nasdaq this hour',
     symbol: 'NDX',
-    title: 'Nasdaq-100 up this hour?',
-    subtitle: 'Settles top of the hour vs. open 24,318.40',
+    title: 'Will the Nasdaq-100 rise this hour?',
+    subtitle: 'Compared with this hour’s open of 24,318.40.',
     base: 24331.2,
     vol: 6,
     upPrice: 0.52,
@@ -97,9 +99,10 @@ export const PREDICT_MARKETS = [
   },
   {
     id: 'btc-15',
+    label: 'Bitcoin, 15 min',
     symbol: 'BTC',
-    title: 'Bitcoin up in 15 minutes?',
-    subtitle: 'Settles vs. reference $112,480',
+    title: 'Will Bitcoin be higher in 15 minutes?',
+    subtitle: 'Compared with the reference price of $112,480.',
     base: 112520,
     vol: 45,
     upPrice: 0.49,
@@ -108,9 +111,10 @@ export const PREDICT_MARKETS = [
   },
   {
     id: 'cpi',
+    label: 'Core inflation',
     symbol: 'CPI',
-    title: 'Core CPI MoM above 0.3%?',
-    subtitle: 'Event contract · settles on BLS release',
+    title: 'Will core inflation beat 0.3% this month?',
+    subtitle: 'Settles when the Bureau of Labor Statistics publishes CPI.',
     base: 0.31,
     vol: 0.004,
     upPrice: 0.44,
@@ -120,11 +124,11 @@ export const PREDICT_MARKETS = [
 ];
 
 export const TRADE_SYMBOLS = [
-  { symbol: 'SPY', name: 'SPDR S&P 500 ETF', price: 658.1, change: 0.26, ivRank: 45, expectedMove: 5.5, pop: 68, iv: 14.2, beta: 1.0 },
-  { symbol: 'QQQ', name: 'Invesco QQQ Trust', price: 592.44, change: 0.41, ivRank: 38, expectedMove: 7.1, pop: 64, iv: 17.8, beta: 1.12 },
-  { symbol: 'AAPL', name: 'Apple Inc.', price: 241.3, change: -0.62, ivRank: 52, expectedMove: 6.2, pop: 61, iv: 24.5, beta: 1.21 },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 178.92, change: 1.84, ivRank: 71, expectedMove: 9.8, pop: 57, iv: 41.3, beta: 1.74 },
-  { symbol: 'TSLA', name: 'Tesla Inc.', price: 402.15, change: -1.12, ivRank: 63, expectedMove: 24.6, pop: 55, iv: 52.9, beta: 2.05 },
+  { symbol: 'SPY', name: 'SPDR S&P 500 ETF', price: 658.14, change: 0.26, ivRank: 43, expectedMove: 5.38, pop: 67, iv: 14.2, beta: 1.0 },
+  { symbol: 'QQQ', name: 'Invesco QQQ Trust', price: 592.44, change: 0.41, ivRank: 37, expectedMove: 7.12, pop: 63, iv: 17.8, beta: 1.12 },
+  { symbol: 'AAPL', name: 'Apple Inc.', price: 241.37, change: -0.62, ivRank: 52, expectedMove: 6.23, pop: 61, iv: 24.5, beta: 1.21 },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 178.92, change: 1.84, ivRank: 71, expectedMove: 9.84, pop: 57, iv: 41.3, beta: 1.74 },
+  { symbol: 'TSLA', name: 'Tesla Inc.', price: 402.15, change: -1.12, ivRank: 63, expectedMove: 24.61, pop: 54, iv: 52.9, beta: 2.05 },
 ];
 
 /** Seeded random walk so charts are stable between renders. */

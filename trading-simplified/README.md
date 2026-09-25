@@ -14,6 +14,19 @@ npm run build:artifact   # single self-contained page for claude.ai hosting
 
 **Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (private until shared from the page's Share menu). First-time visitors see a partner intro screen. Its choice is remembered per browser, **Overview** reopens it, and adding `#demo` to the link skips it for live pitches. `build:artifact` writes `dist-artifact/trading-simplified.html`: one self-contained page with React, app JS and CSS all inlined (no script CDN), plus a visible fallback message if the app fails to start. Republish that file to update the link.
 
+## Visual identity
+
+Consumer direction: calm, spacious, and focused on one big number per screen. Tokens live in `src/index.css` (light by default, with a full dark theme that follows the device and can be switched from the header).
+
+| Role | Light | Dark | Use |
+|---|---|---|---|
+| Brand, cobalt | `#2748D8` | `#8FA3FF` | Main actions, links, selected state |
+| Graduation, marigold | `#E9A826` | `#F0B84A` | Road to $2K, tier badges, the logo's top step. Nothing else. |
+| Up / down | `#0B7A52` / `#BF3A2B` | `#43C98F` / `#FF7F6E` | Price direction only, always with a word or arrow |
+| Paper, ink | `#F3F4F0`, `#151B22` | `#0F1216`, `#EEF0F2` | Backgrounds and text |
+
+Type: **Bricolage Grotesque** for headlines and big numbers, **Figtree** for everything else. The logo is three ascending steps (Tiers A, B and C), with the top step in marigold. Every text color meets WCAG AA contrast (4.5:1) in both themes, and no text is smaller than 12 px.
+
 ## Structure
 
 ```
@@ -21,11 +34,12 @@ src/
   App.jsx                    global state: balance, tier, channel, kill switch, toasts
   data/mock.js               tiers, Smart Stake math, markets, symbols, formatters
   components/
-    Header.jsx               balance · tier badge · Road to $2K · Safe-State Kill Switch
-    ChannelToggle.jsx        PREDICT / TRADE switch
+    Header.jsx               logo, Predict/Trade switch, balance with Road to $2K, theme toggle, Safe-State switch
+    ChannelToggle.jsx        Predict / Trade segmented control
+    Logo.jsx                 three-step mark and wordmark
     PredictChannel.jsx       Velocity Engine: live chart, UP/DOWN $20 stakes, Share to X
     TradeChannel.jsx         Wealth Builder: Mechanical Data Dashboard, order ticket, blotter
-    FlywheelPanel.jsx        Graduation Flywheel side panel + demo balance slider
+    FlywheelPanel.jsx        "Your path" drawer: next-tier checklist, discipline check, tiers, demo controls
     PriceChart.jsx           dependency-free SVG chart with crosshair tooltip
     IntroScreen.jsx          partner-facing overview shown on first visit
     Toasts.jsx               success / warning / info notifications
@@ -36,8 +50,8 @@ src/
 1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
 2. **TRADE:** raise the quantity until the **Smart Stake** meter turns red. The cap is 25% of equity or the tier's per-order limit, whichever is lower. Use **Clamp**, then submit. **Copy cost basis CSV** in the blotter copies a tax-reporting export to the clipboard.
 3. **Kill switch:** turn it on in the header. A red View-Only banner appears, execution-API latency jumps above the 500 ms trip point, and every execution button is grayed out.
-4. **Graduation Flywheel (balance + discipline + partner approval):**
-   - Click the Tier badge, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.
+4. **Graduation (balance + discipline + partner approval):**
+   - Click the balance in the header to open **Your path**, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.
    - Tick **Simulate a discipline gap** to show that balance alone is not enough: the submit button stays locked.
    - Untick it, then click **Submit for Tier B approval**. After a short simulated review, the partner approves Tier B and margin unlocks on the ticket.
    - If the balance later falls below $2,000, limits drop back to Tier A automatically.

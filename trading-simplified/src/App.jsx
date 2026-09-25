@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GraduationCap, Info } from 'lucide-react';
 import Header from './components/Header.jsx';
-import ChannelToggle from './components/ChannelToggle.jsx';
 import PredictChannel from './components/PredictChannel.jsx';
 import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
@@ -22,6 +20,22 @@ function shouldShowIntro() {
   }
 }
 
+const THEME_KEY = 'ts-theme';
+
+// Follows the viewer's saved choice, then the host page's theme, then the OS.
+function initialTheme() {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const saved = window.localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch {
+    /* storage unavailable */
+  }
+  const stamped = document.documentElement.getAttribute('data-theme');
+  if (stamped === 'light' || stamped === 'dark') return stamped;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 const now = () => new Date().toLocaleTimeString('en-US', { hour12: false });
 
 export default function App() {
@@ -34,6 +48,7 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [latency, setLatency] = useState(18);
+  const [theme, setTheme] = useState(initialTheme);
   const [approvedTierId, setApprovedTierId] = useState(tierFor(STARTING_BALANCE).id);
   const [approvalPending, setApprovalPending] = useState(false);
   const [disciplineGap, setDisciplineGap] = useState(false);
@@ -63,6 +78,20 @@ export default function App() {
     [dismiss],
   );
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    try {
+      window.localStorage.setItem(THEME_KEY, next);
+    } catch {
+      /* storage unavailable: choice lasts for this visit */
+    }
+  };
+
   // mock latency feed; spikes while the kill switch is engaged
   useEffect(() => {
     const t = setInterval(() => {
@@ -77,8 +106,10 @@ export default function App() {
       const up = tier.id > prevTier.current;
       notify({
         kind: up ? 'success' : 'warning',
-        title: up ? `Partner approved ${tier.name}` : `Limits reduced to ${tier.name}`,
-        body: `${tier.margin ? 'Margin enabled' : 'Cash only (T+1)'} · $${tier.predictStake} Predict · ${tier.maxStake ? fmtUSD(tier.maxStake, 0) + ' max per order' : 'partner-defined limits'}`,
+        title: up ? `Welcome to ${tier.name}` : `Back to ${tier.name} limits`,
+        body: up
+          ? `[PARTNER] approved the upgrade. ${tier.margin ? 'Margin is now available on Trade.' : ''}`
+          : `Your balance is below ${fmtUSD(TIERS[tierIdx + 1].min, 0)}, so lower limits apply until it recovers.`,
       });
       prevTier.current = tier.id;
     }
@@ -87,7 +118,7 @@ export default function App() {
   // announce new eligibility once
   useEffect(() => {
     if (eligible && !wasEligible.current && nextTier) {
-      notify({ kind: 'info', title: `Eligible for ${nextTier.name}`, body: 'Open the Graduation Flywheel to submit for partner approval' });
+      notify({ kind: 'info', title: `You qualify for ${nextTier.name}`, body: 'Open your path to send it for partner approval.' });
     }
     wasEligible.current = eligible;
   }, [eligible, nextTier, notify]);
@@ -96,7 +127,7 @@ export default function App() {
     if (!eligible || approvalPending) return;
     const target = nextTier;
     setApprovalPending(true);
-    notify({ kind: 'info', title: `Recommended for ${target.name}`, body: 'Sent to partner for account approval' });
+    notify({ kind: 'info', title: `Sent for ${target.name} approval`, body: '[PARTNER] is reviewing the upgrade.' });
     setTimeout(() => {
       setApprovedTierId(target.id);
       setApprovalPending(false);
@@ -108,8 +139,8 @@ export default function App() {
     setKillSwitch(next);
     notify(
       next
-        ? { kind: 'warning', title: 'Safe-State Kill Switch engaged', body: `Execution-API latency > ${KILL_SWITCH_MS} ms · View-Only Mode` }
-        : { kind: 'success', title: 'Execution restored', body: 'Order routing back online' },
+        ? { kind: 'warning', title: 'Trading paused', body: `Execution is slower than ${KILL_SWITCH_MS} ms. The app is in view-only mode.` }
+        : { kind: 'success', title: 'Trading resumed', body: 'Orders are being sent again.' },
     );
   };
 
@@ -134,8 +165,8 @@ export default function App() {
     ]);
     notify({
       kind: 'success',
-      title: `Prediction placed: ${side}`,
-      body: `${market.symbol} · ${fmtUSD(stake, 0)} @ ${Math.round(price * 100)}¢ + ${fmtUSD(fee)} fee · routed to exchange`,
+      title: `You predicted ${side === 'UP' ? 'up' : 'down'}`,
+      body: `${fmtUSD(stake, 0)} at ${Math.round(price * 100)}¢ plus a ${fmtUSD(fee)} fee. Sent to the exchange.`,
     });
   };
 
@@ -144,8 +175,8 @@ export default function App() {
     setOrders((list) => [{ ...o, id: Date.now(), time: now() }, ...list]);
     notify({
       kind: 'success',
-      title: `Order routed: ${o.side} ${+o.qty.toFixed(3)} ${o.symbol}`,
-      body: `Limit ${fmtNum(o.limit)} · ${fmtUSD(o.notional)} · ${o.margin ? 'margin' : 'cash'} · via partner`,
+      title: `Order sent: ${o.side === 'BUY' ? 'buy' : 'sell'} ${+o.qty.toFixed(3)} ${o.symbol}`,
+      body: `Limit ${fmtNum(o.limit)}, about ${fmtUSD(o.notional)} from your ${o.margin ? 'margin' : 'cash'} balance.`,
     });
   };
 
@@ -154,45 +185,37 @@ export default function App() {
       <Header
         balance={balance}
         tier={tier}
+        channel={channel}
+        onChannel={setChannel}
         killSwitch={killSwitch}
         onKillSwitch={toggleKill}
         latency={latency}
         onOpenFlywheel={() => setFlywheelOpen(true)}
         eligibleFor={eligible ? nextTier : null}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
-      <main className="mx-auto max-w-[1440px] px-4 py-5 lg:px-6">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <ChannelToggle channel={channel} onChange={setChannel} />
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setIntroOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-200 transition hover:border-terminal/50 hover:text-terminal"
-            >
-              <Info className="h-4 w-4" />
+      <main className="mx-auto max-w-[1200px] px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
+        {channel === 'predict' ? (
+          <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
+        ) : (
+          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} onOrder={handleOrder} notify={notify} />
+        )}
+
+        <footer className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-ink-3 sm:flex-row sm:items-start sm:justify-between">
+          <p className="max-w-2xl leading-relaxed">
+            Prototype with simulated prices, balances and fills. In production, custody, execution and account approval come from [PARTNER]. Not an offer to buy or
+            sell securities or event contracts.
+          </p>
+          <div className="flex shrink-0 gap-4">
+            <button onClick={() => setFlywheelOpen(true)} className="font-medium text-brand hover:underline">
+              Your path
+            </button>
+            <button onClick={() => setIntroOpen(true)} className="font-medium text-brand hover:underline">
               Overview
             </button>
-            <button
-              onClick={() => setFlywheelOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-200 transition hover:border-terminal/50 hover:text-terminal"
-            >
-              <GraduationCap className="h-4 w-4" />
-              Graduation Flywheel
-            </button>
           </div>
-        </div>
-
-        <div key={channel} className="animate-fade-in">
-          {channel === 'predict' ? (
-            <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
-          ) : (
-            <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} onOrder={handleOrder} notify={notify} />
-          )}
-        </div>
-
-        <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-ink-800 pt-4 font-mono text-[10px] text-ink-500">
-          <span>Trading Simplified · Prototype · All market data, balances and fills are simulated.</span>
-          <span>In production, custody, execution and account approval are provided by [PARTNER]. Not an offer to buy or sell securities or event contracts.</span>
         </footer>
       </main>
 

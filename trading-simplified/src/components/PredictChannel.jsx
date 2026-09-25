@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownRight, ArrowUpRight, Clock, Lock, Share2, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock, Share2 } from 'lucide-react';
 import PriceChart from './PriceChart.jsx';
 import { PREDICT_FEE_PER_CONTRACT, PREDICT_MARKETS, fmtCountdown, fmtNum, fmtUSD, makeSeries, seedFrom } from '../data/mock.js';
 
 const RANGES = ['1H', '1D', '5D'];
 
 export default function PredictChannel({ killSwitch, balance, tier, positions, onPredict, notify }) {
-  const PREDICT_STAKE = tier.predictStake;
+  const stake = tier.predictStake;
   const [marketId, setMarketId] = useState(PREDICT_MARKETS[0].id);
   const [range, setRange] = useState('1D');
   const [tick, setTick] = useState(0);
   const market = PREDICT_MARKETS.find((m) => m.id === marketId);
 
-  // live-ish ticking: nudge the last point + countdown every second
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(t);
@@ -34,228 +33,181 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
   const upPrice = Math.min(0.95, Math.max(0.05, market.upPrice + Math.sin(tick / 3) * 0.01));
   const downPrice = 1 - upPrice;
   const countdown = Math.max(0, market.expiresIn - tick);
-  const insufficient = balance < PREDICT_STAKE;
+  const insufficient = balance < stake;
   const disabled = killSwitch || insufficient;
 
-  const shareText = `Pulse Snapshot: ${market.title} Market says ${Math.round(upPrice * 100)}% UP right now. #TradingSimplified\n\nMarket data only, not advice. Event contracts involve risk of loss.`;
+  const shareText = `Pulse Snapshot: ${market.title} The market says ${Math.round(upPrice * 100)}% up right now. #TradingSimplified\n\nMarket data only, not advice. Event contracts involve risk of loss.`;
   const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
-  const share = () => notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'Market data only — your P&L is never shared' });
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-      {/* Chart + markets */}
-      <section className="panel overflow-hidden">
-        <div className="flex gap-2 overflow-x-auto border-b border-ink-700/80 p-2">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <section className="flex min-w-0 flex-col gap-6">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Markets">
           {PREDICT_MARKETS.map((m) => (
             <button
               key={m.id}
+              role="tab"
+              aria-selected={m.id === marketId}
               onClick={() => setMarketId(m.id)}
-              className={`shrink-0 rounded-lg border px-3 py-2 text-left transition ${
-                m.id === marketId ? 'border-terminal/50 bg-terminal/10' : 'border-transparent hover:border-ink-600 hover:bg-ink-800'
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                m.id === marketId ? 'bg-ink text-bg' : 'bg-surface text-ink-2 ring-1 ring-line hover:text-ink'
               }`}
             >
-              <span className={`block font-mono text-[11px] font-semibold ${m.id === marketId ? 'text-terminal' : 'text-ink-300'}`}>{m.symbol}</span>
-              <span className="block max-w-[180px] truncate text-xs text-ink-200">{m.title}</span>
+              {m.label}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-wrap items-start justify-between gap-4 px-4 pt-4 sm:px-5">
-          <div>
-            <p className="label">Index Event Contract · Binary · Capped Risk</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight text-ink-100 sm:text-2xl">{market.title}</h2>
-            <p className="mt-1 text-sm text-ink-400">{market.subtitle}</p>
-          </div>
-          <div className="text-right">
-            <p className="font-mono text-2xl font-semibold text-ink-100 num">{fmtNum(last, decimals)}</p>
-            <p className={`flex items-center justify-end gap-1 font-mono text-xs num ${isUp ? 'text-up' : 'text-down'}`}>
-              {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              {isUp ? 'Above' : 'Below'} strike by {fmtNum(Math.abs(last - strike), decimals)}
-            </p>
-          </div>
-        </div>
+        <div className="card p-6 sm:p-8">
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight text-ink sm:text-[40px]">{market.title}</h1>
+          <p className="mt-2 text-ink-2">{market.subtitle}</p>
 
-        <div className="flex items-center justify-between px-4 pt-4 sm:px-5">
-          <div className="flex gap-1 rounded-md bg-ink-850 p-0.5">
-            {RANGES.map((r) => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className={`rounded px-2.5 py-1 font-mono text-[11px] transition ${r === range ? 'bg-ink-700 text-ink-100' : 'text-ink-400 hover:text-ink-200'}`}
-              >
-                {r}
-              </button>
-            ))}
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-display text-5xl font-semibold tracking-tight text-ink num">{fmtNum(last, decimals)}</p>
+              <p className={`mt-1 flex items-center gap-1 text-[15px] font-medium num ${isUp ? 'text-up' : 'text-down'}`}>
+                {isUp ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                {fmtNum(Math.abs(last - strike), decimals)} {isUp ? 'above' : 'below'} the line
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-sm text-ink-2">
+                <Clock className="h-4 w-4" />
+                Closes in <span className="font-semibold text-ink num">{fmtCountdown(countdown)}</span>
+              </span>
+              <div className="flex rounded-full bg-sunken p-0.5">
+                {RANGES.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRange(r)}
+                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${r === range ? 'bg-surface text-ink shadow-card' : 'text-ink-3 hover:text-ink'}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-4 font-mono text-[11px] text-ink-400">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" /> <span className="num text-ink-200">{fmtCountdown(countdown)}</span>
-            </span>
-            <span className="hidden sm:inline">Vol <span className="text-ink-200">{market.volume}</span></span>
-          </div>
-        </div>
 
-        <div className="px-2 pb-3 pt-2 sm:px-3">
-          <PriceChart data={series} height={280} color={isUp ? '#22c55e' : '#f43f5e'} baseline={strike} format={(v) => fmtNum(v, decimals)} />
-        </div>
-
-        {/* Implied probability bar */}
-        <div className="border-t border-ink-700/80 px-4 py-4 sm:px-5">
-          <div className="mb-2 flex justify-between font-mono text-[11px]">
-            <span className="text-up">UP {Math.round(upPrice * 100)}%</span>
-            <span className="label">Market-Implied Probability</span>
-            <span className="text-down">DOWN {Math.round(downPrice * 100)}%</span>
+          <div className="mt-6">
+            <PriceChart data={series} height={260} tone={isUp ? 'up' : 'down'} baseline={strike} baselineLabel="Line" format={(v) => fmtNum(v, decimals)} />
           </div>
-          <div className="flex h-2 gap-0.5 overflow-hidden rounded-full">
-            <div className="rounded-l-full bg-up/80 transition-all duration-700" style={{ width: `${upPrice * 100}%` }} />
-            <div className="flex-1 rounded-r-full bg-down/80" />
+
+          <div className="mt-6">
+            <div className="flex h-2 gap-1 overflow-hidden rounded-full">
+              <div className="rounded-full bg-up transition-all duration-700" style={{ width: `${upPrice * 100}%` }} />
+              <div className="flex-1 rounded-full bg-down" />
+            </div>
+            <div className="mt-2 flex justify-between text-sm">
+              <span className="font-medium text-up num">{Math.round(upPrice * 100)}% say up</span>
+              <span className="text-ink-3">{market.volume} traded</span>
+              <span className="font-medium text-down num">{Math.round(downPrice * 100)}% say down</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Execution rail */}
-      <aside className="flex flex-col gap-4">
-        <section className="panel p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="label">Quick Position</p>
-            <span className="inline-flex items-center gap-1 rounded border border-ink-600 px-1.5 py-0.5 font-mono text-[10px] text-ink-300">
-              <Lock className="h-2.5 w-2.5" /> Max loss {fmtUSD(PREDICT_STAKE, 0)}
-            </span>
+      <aside className="flex flex-col gap-6">
+        <div className="card p-6">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-xl font-semibold text-ink">Make a prediction</h2>
+            <span className="text-sm text-ink-3">Tier {tier.id}</span>
           </div>
-
-          <div className="flex items-stretch gap-2">
-            <div className="grid flex-1 gap-2">
-              <ExecButton
-                side="UP"
-                stake={PREDICT_STAKE}
-                price={upPrice}
-                disabled={disabled}
-                onClick={() => onPredict({ market, side: 'UP', price: upPrice, stake: PREDICT_STAKE })}
-              />
-              <ExecButton
-                side="DOWN"
-                stake={PREDICT_STAKE}
-                price={downPrice}
-                disabled={disabled}
-                onClick={() => onPredict({ market, side: 'DOWN', price: downPrice, stake: PREDICT_STAKE })}
-              />
-            </div>
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={share}
-              className="group flex w-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border border-ink-600 bg-ink-850 text-ink-300 transition hover:-translate-y-0.5 hover:border-sky-400/60 hover:bg-sky-400/10 hover:text-sky-300"
-              title="Viral Pulse — Share to X"
-            >
-              <span className="relative">
-                <Share2 className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-sky-400" />
-              </span>
-              <span className="text-center font-mono text-[10px] leading-tight">
-                Share
-                <br />
-                to X
-              </span>
-            </a>
-          </div>
-
-          <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-500">
-            Every position is a real exchange order. Trading Simplified never takes the other side. Pulse Snapshots share market data only.
+          <p className="mt-1 text-sm text-ink-2">
+            You stake {fmtUSD(stake, 0)}. That's the most you can lose.
           </p>
 
-          {killSwitch && (
-            <p className="mt-3 rounded-md border border-down/30 bg-down/10 px-2.5 py-2 font-mono text-[11px] text-down">
-              Execution disabled — View-Only Mode.
-            </p>
-          )}
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <ChoiceButton side="UP" stake={stake} price={upPrice} disabled={disabled} onClick={() => onPredict({ market, side: 'UP', price: upPrice, stake })} />
+            <ChoiceButton side="DOWN" stake={stake} price={downPrice} disabled={disabled} onClick={() => onPredict({ market, side: 'DOWN', price: downPrice, stake })} />
+          </div>
+
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => notify({ kind: 'info', title: 'Pulse Snapshot ready', body: 'It shares market data only. Your balance and results stay private.' })}
+            className="mt-3 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-brand transition hover:bg-brand-soft"
+          >
+            <Share2 className="h-4 w-4" /> Share to X
+          </a>
+
+          {killSwitch && <p className="mt-3 rounded-xl bg-down-soft px-4 py-3 text-sm text-down">Trading is paused. You can still watch prices.</p>}
           {!killSwitch && insufficient && (
-            <p className="mt-3 rounded-md border border-terminal/30 bg-terminal/10 px-2.5 py-2 font-mono text-[11px] text-terminal">
-              Insufficient balance for a {fmtUSD(PREDICT_STAKE, 0)} stake.
-            </p>
+            <p className="mt-3 rounded-xl bg-gold-soft px-4 py-3 text-sm text-gold-ink">You need at least {fmtUSD(stake, 0)} to make a prediction.</p>
           )}
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-ink-700/80 pt-3 font-mono text-[11px]">
-            <dt className="text-ink-400">Stake</dt>
-            <dd className="text-right text-ink-100 num">{fmtUSD(PREDICT_STAKE)}</dd>
-            <dt className="text-ink-400">Payout if UP wins</dt>
-            <dd className="text-right text-up num">{fmtUSD(PREDICT_STAKE / upPrice)}</dd>
-            <dt className="text-ink-400">Payout if DOWN wins</dt>
-            <dd className="text-right text-down num">{fmtUSD(PREDICT_STAKE / downPrice)}</dd>
-            <dt className="text-ink-400">Stake tier</dt>
-            <dd className="text-right text-terminal">{tier.name}</dd>
-            <dt className="text-ink-400">Contracts</dt>
-            <dd className="text-right text-ink-100 num">{Math.floor(PREDICT_STAKE / upPrice)} UP / {Math.floor(PREDICT_STAKE / downPrice)} DOWN</dd>
-            <dt className="text-ink-400">Fee (disclosed)</dt>
-            <dd className="text-right text-ink-100 num">{fmtUSD(PREDICT_FEE_PER_CONTRACT)} / contract</dd>
-            <dt className="text-ink-400">Execution</dt>
-            <dd className="text-right text-ink-200">[PARTNER] → exchange</dd>
-            <dt className="text-ink-400">Clearing</dt>
-            <dd className="text-right text-ink-200">Central (CME, mock)</dd>
+          <dl className="mt-5 space-y-2.5 border-t border-line pt-5 text-sm">
+            <Row label="If up wins, you get" value={fmtUSD(stake / upPrice)} />
+            <Row label="If down wins, you get" value={fmtUSD(stake / downPrice)} />
+            <Row label="Fee" value={`${fmtUSD(PREDICT_FEE_PER_CONTRACT)} per contract`} />
           </dl>
-        </section>
+          <p className="mt-4 text-sm leading-relaxed text-ink-3">
+            Each prediction is a real order on the exchange, sent through [PARTNER] and centrally cleared. We never take the other side.
+          </p>
+        </div>
 
-        <section className="panel flex-1">
-          <div className="panel-header">
-            <p className="label">Open Contracts</p>
-            <span className="font-mono text-[11px] text-ink-400">{positions.length}</span>
+        <div className="card p-6">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-xl font-semibold text-ink">Your predictions</h2>
+            <span className="text-sm text-ink-3 num">{positions.length}</span>
           </div>
           {positions.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-              <ShieldCheck className="h-6 w-6 text-ink-500" />
-              <p className="text-sm text-ink-400">No open contracts. Every position here has a fixed, known max loss.</p>
-            </div>
+            <p className="mt-3 text-sm text-ink-2">Nothing open yet. Each one has a fixed, known maximum loss.</p>
           ) : (
-            <ul className="max-h-[280px] divide-y divide-ink-700/60 overflow-y-auto">
+            <ul className="mt-3 max-h-[280px] divide-y divide-line overflow-y-auto">
               {positions.map((p) => (
-                <li key={p.id} className="flex items-center justify-between px-4 py-2.5 animate-fade-in">
+                <li key={p.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-ink-100">{p.title}</p>
-                    <p className="font-mono text-[11px] text-ink-400">
-                      {p.time} · @ {Math.round(p.price * 100)}¢
+                    <p className="truncate text-sm font-medium text-ink">{p.title}</p>
+                    <p className="text-xs text-ink-3 num">
+                      {p.time}, bought at {Math.round(p.price * 100)}¢
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className={`inline-flex items-center gap-0.5 font-mono text-xs font-semibold ${p.side === 'UP' ? 'text-up' : 'text-down'}`}>
-                      {p.side === 'UP' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                      {p.side}
-                    </span>
-                    <p className="font-mono text-[11px] text-ink-300 num">{fmtUSD(p.stake)}</p>
+                    <p className={`text-sm font-semibold ${p.side === 'UP' ? 'text-up' : 'text-down'}`}>{p.side === 'UP' ? 'Up' : 'Down'}</p>
+                    <p className="text-xs text-ink-3 num">{fmtUSD(p.stake, 0)}</p>
                   </div>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </div>
       </aside>
     </div>
   );
 }
 
-function ExecButton({ side, stake, price, disabled, onClick }) {
+function ChoiceButton({ side, stake, price, disabled, onClick }) {
   const up = side === 'UP';
-  const Icon = up ? ArrowUpRight : ArrowDownRight;
+  const Icon = up ? ArrowUp : ArrowDown;
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`btn-exec group relative flex items-center justify-between overflow-hidden rounded-xl border px-4 py-4 text-left transition enabled:hover:-translate-y-0.5 enabled:active:translate-y-0 ${
-        up
-          ? 'border-up/40 bg-up/10 enabled:hover:border-up enabled:hover:bg-up/20 enabled:hover:shadow-[0_8px_30px_-12px_rgba(34,197,94,0.6)]'
-          : 'border-down/40 bg-down/10 enabled:hover:border-down enabled:hover:bg-down/20 enabled:hover:shadow-[0_8px_30px_-12px_rgba(244,63,94,0.6)]'
+      aria-label={`${up ? 'UP' : 'DOWN'} (Stake $${stake}) at ${Math.round(price * 100)} cents`}
+      className={`btn-exec flex flex-col items-start gap-3 rounded-2xl p-4 text-left transition enabled:hover:-translate-y-0.5 enabled:active:translate-y-0 ${
+        up ? 'bg-up-soft enabled:hover:ring-2 enabled:hover:ring-up' : 'bg-down-soft enabled:hover:ring-2 enabled:hover:ring-down'
       }`}
     >
-      <span>
-        <span className={`flex items-center gap-1.5 text-lg font-semibold tracking-tight ${up ? 'text-up' : 'text-down'}`}>
-          <Icon className="h-5 w-5" strokeWidth={2.5} />
-          {side}
-        </span>
-        <span className="font-mono text-[11px] text-ink-300">Stake {fmtUSD(stake, 0)}</span>
+      <span className={`grid h-9 w-9 place-items-center rounded-full ${up ? 'bg-up text-surface' : 'bg-down text-surface'}`}>
+        <Icon className="h-5 w-5" strokeWidth={2.5} />
       </span>
-      <span className="text-right">
-        <span className="block font-mono text-lg font-semibold text-ink-100 num">{Math.round(price * 100)}¢</span>
-        <span className="font-mono text-[10px] text-ink-400">per contract</span>
+      <span>
+        <span className={`block font-display text-2xl font-semibold ${up ? 'text-up' : 'text-down'}`}>{up ? 'Up' : 'Down'}</span>
+        <span className="text-sm text-ink-2 num">
+          Stake {fmtUSD(stake, 0)} at {Math.round(price * 100)}¢
+        </span>
       </span>
     </button>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="text-ink-2">{label}</dt>
+      <dd className="font-medium text-ink num">{value}</dd>
+    </div>
   );
 }
