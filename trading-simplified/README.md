@@ -12,7 +12,9 @@ npm run build    # static bundle in dist/ (relative paths, host anywhere)
 npm run build:artifact   # single self-contained page for claude.ai hosting
 ```
 
-**Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (private until shared from the page's Share menu). First-time visitors see a partner intro screen. Its choice is remembered per browser, **Overview** reopens it, and adding `#demo` to the link skips it for live pitches. `build:artifact` writes `dist-artifact/trading-simplified.html`: one self-contained page with React, app JS and CSS all inlined (no script CDN), plus a visible fallback message if the app fails to start. Republish that file to update the link.
+**Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (currently shared as "anyone with the link"). First-time visitors see a partner intro screen. Its choice is remembered per browser, **Overview** reopens it, and adding `#demo` to the link skips it for live pitches. `build:artifact` writes `dist-artifact/trading-simplified.html`: one self-contained page with React, app JS and CSS all inlined (no script CDN), plus a visible fallback message if the app fails to start. Republish that file to update the link.
+
+**Partner deck:** https://claude.ai/artifact/3FsxUgMfgXFGn2PrMfk9Lx, with a versioned copy of its slides in [`deck/`](deck/README.md). The white paper revisions are in [`docs/`](docs/white-paper-v3.8-revisions.md).
 
 ## Visual identity
 
