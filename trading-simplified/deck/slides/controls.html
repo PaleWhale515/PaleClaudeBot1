@@ -1,0 +1,32 @@
+<section id="controls" data-transition="fade" style="background:#F3F4F0; color:#151B22; font-family:Figtree, Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+  <div style="display:flex; flex-direction:column; gap:12px">
+    <p style="font-size:24px; font-weight:600; color:#2748D8">Risk controls</p>
+    <h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif; font-size:64px; font-weight:600; line-height:1.1; letter-spacing:-1px; color:#151B22">Checks that run before any order leaves</h2>
+  </div>
+  <div style="display:flex; flex-direction:row; gap:32px">
+    <div style="flex:1; display:flex; flex-direction:column; gap:20px; background:#FBFBF9; border:1px solid #DCDFD8; border-radius:28px; padding:44px">
+      <x-icon name="Lock" style="color:#2748D8; width:44px; height:44px"></x-icon>
+      <h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif; font-size:44px; font-weight:600; line-height:1.15; color:#151B22">Smart Stake</h3>
+      <p style="font-size:32px; line-height:1.4; color:#48515C">No order adds more than 25% of the balance, or the tier limit, in new risk.</p>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; gap:20px; background:#FBFBF9; border:1px solid #DCDFD8; border-radius:28px; padding:44px">
+      <x-icon name="Warning" style="color:#BF3A2B; width:44px; height:44px"></x-icon>
+      <h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif; font-size:44px; font-weight:600; line-height:1.15; color:#151B22">Safe-State switch</h3>
+      <p style="font-size:32px; line-height:1.4; color:#48515C">Trading pauses above 500 ms execution latency. Prices stay live.</p>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; gap:20px; background:#FBFBF9; border:1px solid #DCDFD8; border-radius:28px; padding:44px">
+      <x-icon name="Verified" style="color:#2748D8; width:44px; height:44px"></x-icon>
+      <h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif; font-size:44px; font-weight:600; line-height:1.15; color:#151B22">Partner approval</h3>
+      <p style="font-size:32px; line-height:1.4; color:#48515C">Margin and options approval stay with the partner.</p>
+    </div>
+  </div>
+  <div style="display:flex; flex-direction:row; align-items:center; gap:28px; border-top:1px solid #DCDFD8; padding:32px 0 0 0">
+    <p style="font-size:24px; font-weight:600; color:#151B22; background:#E6EBFD; border-radius:999px; padding:6px 18px; white-space:nowrap">Non-custodial</p>
+    <p style="font-size:32px; line-height:1.4; color:#48515C">[PARTNER] holds custody and runs KYC and AML. Our status: [REGISTRATION STATUS].</p>
+  </div>
+  <div style="position:absolute; left:128px; right:128px; bottom:64px; height:32px; display:flex; flex-direction:row; justify-content:space-between">
+    <p style="font-size:24px; color:#5F6873">Designed to complement SEC Rule 15c3-5 and FINRA Rules 4210 and 2360</p>
+    <p style="font-size:24px; color:#5F6873">07</p>
+  </div>
+  <aside>Map each control to the partner's world: Smart Stake and the kill switch complement the pre-trade risk controls a broker with market access already needs under SEC Rule 15c3-5. Closing or reducing a position is never capped, because it lowers risk. Approval stays with the partner. Fill in the registration status only after counsel confirms it.</aside>
+</section>
