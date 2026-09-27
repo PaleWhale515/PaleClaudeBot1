@@ -86,8 +86,12 @@ export default function FlywheelPanel({
                     {d.label}
                   </span>
                   <span className="text-right">
-                    <span className={`block font-semibold num ${d.pass ? 'text-ink' : 'text-down'}`}>{d.value}</span>
-                    {d.need && <span className="block text-xs text-ink-3">{d.need}</span>}
+                    <span className={`block font-semibold num ${d.pass ? 'text-ink' : 'text-down'}`}>
+                      {d.points}/{d.max}
+                    </span>
+                    <span className="block text-xs text-ink-3 num">
+                      {d.value}. {d.need}
+                    </span>
                   </span>
                 </li>
               ))}

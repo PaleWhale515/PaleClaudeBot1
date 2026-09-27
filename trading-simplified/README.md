@@ -38,12 +38,12 @@ src/
   data/options.js            SPY options engine: Black-Scholes pricing and Greeks, Probability Slider strike selection, payoffs
   components/
     Header.jsx               logo, Predict/Trade switch, balance with Road to $2K, theme toggle, Safe-State status
-    ChannelToggle.jsx        Predict / Trade segmented control
+    ChannelToggle.jsx        Predict / Trade / Journal & Ladders tabs
     Logo.jsx                 three-step mark and wordmark
     PredictChannel.jsx       Velocity Engine: live chart, UP/DOWN $20 stakes, Share to X
-    TradeChannel.jsx         Trade: SPY chart, market context, Probability Slider ticket (Simplified / Pro), options positions, order history
+    TradeChannel.jsx         Trade: SPY chart, market context, Probability Slider ticket (Simplified / Detailed), options positions, order history
     PayoffChart.jsx          profit or loss at expiration by SPY price
-    JournalChannel.jsx       Journal & Ladders: locked, blurred preview with the $9.99/month Pro upsell
+    JournalChannel.jsx       Journal & Ladders: locked, blurred preview with the $9.99/month Plus upsell
     InfoTip.jsx              accessible info tooltip (Discipline Score)
     FlywheelPanel.jsx        "Your path" drawer: next-tier checklist, discipline check, tiers, demo controls
     PriceChart.jsx           dependency-free SVG chart with crosshair tooltip
@@ -57,16 +57,16 @@ src/
 2. **TRADE (SPY options, the Probability Slider):**
    - Apply for options trading (tick the options risk disclosure, then submit). Approval takes a moment.
    - Pick **Up**, **Down** or **Stay in range**, an expiration from today (0DTE) to 1 year, and an estimated chance of profit from 1% to 99%. The engine picks the strikes: below 50% it buys a call, put or butterfly; from 50% up it sells a put spread, call spread or iron condor.
-   - "You could make" and "You could lose" always show side by side, with a payoff chart. **Pro** adds legs, spread width, IV and Greeks.
+   - "You could make" and "You could lose" always show side by side, with a payoff chart. **Detailed** adds legs, spread width, IV and Greeks.
    - On Tier A only single calls and puts are allowed; the 50–99% side (spreads) unlocks at Tier B. Smart Stake caps each trade's maximum loss.
    - Positions support **Reverse position** (Up ↔ Down at the same chance and expiry; in-range trades can't be reversed), **Close**, and **Close all positions**, each with a confirmation.
    - Every trade has a **System-Enforced Stop-Loss** (locked; half the premium for bought options, twice the credit for sold spreads). It updates as you drag the slider, and closes positions automatically on a price tick when hit.
    - **Copy cost basis (CSV)** copies order history with realized gains and losses.
 3. **Safe-State (automatic):** open **Your path** and tick **Simulate a slow connection**. Latency jumps above 500 ms, trading pauses on its own, and the header shows "Trading paused". Untick it: trading resumes after 5 healthy seconds. Customers never see a switch.
-4. **Journal & Ladders:** the third tab is locked and blurred behind a Pro upsell ($9.99/month). **Upgrade** shows where checkout would open.
-5. **Graduation (balance + Discipline Score + partner approval):** the header shows **Discipline Score: 91/100 - Excellent** with a tooltip; margin needs $2,000 **and** a score above 85.
+4. **Journal & Ladders:** the third tab is locked and blurred behind a Plus upsell ($9.99/month). **Upgrade** shows where checkout would open.
+5. **Graduation (balance + Discipline Score + partner approval):** the header shows **Discipline Score: 92/100 - Excellent** with a tooltip; margin needs $2,000 **and** a score above 85. The score has five factors (position sizing 20, planned exits 25, drawdown 20, trade frequency 15, consistency 20); sizing, exits and frequency come from the user's real orders. **Your path** shows each factor's points.
    - Click the balance in the header to open **Your path**, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.
-   - Tick **Simulate a discipline gap**: the score drops to 84 and the submit button stays locked, even with the balance met.
+   - Tick **Simulate a discipline gap** (oversized trades, skipped exit plans): the score drops to 73 and the submit button stays locked, even with the balance met.
    - Untick it, then click **Submit for Tier B approval**. After a short simulated review, the partner approves Tier B and margin unlocks on the ticket.
    - If the balance later falls below $2,000, limits drop back to Tier A automatically.
 

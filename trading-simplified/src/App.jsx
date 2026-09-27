@@ -68,7 +68,8 @@ export default function App() {
   const [optPositions, setOptPositions] = useState([]);
   const [optionsApproved, setOptionsApproved] = useState(false);
   const [optionsPending, setOptionsPending] = useState(false);
-  const [exits, setExits] = useState({ opened: 0, planned: 0 });
+  // Real inputs to the Discipline Score, gathered from the customer's own orders.
+  const [exits, setExits] = useState({ opened: 0, planned: 0, riskPctSum: 0, opensToday: 0 });
   const [slowLink, setSlowLink] = useState(false);
   const healthySince = useRef(null);
   const [toasts, setToasts] = useState([]);
@@ -240,7 +241,8 @@ export default function App() {
     if (killSwitch) return;
     setOptPositions((list) => [{ id: newId(), trade, contracts, exitPlan, stopLoss }, ...list]);
     setOrders((list) => [openRecord(trade, contracts), ...list]);
-    setExits((e) => ({ opened: e.opened + 1, planned: e.planned + (exitPlan ? 1 : 0) }));
+    const riskPct = ((trade.maxLoss * contracts) / smartStakeCap(balance, tier)) * 100;
+    setExits((e) => ({ opened: e.opened + 1, planned: e.planned + (exitPlan ? 1 : 0), riskPctSum: e.riskPctSum + riskPct, opensToday: e.opensToday + 1 }));
     notify({
       kind: 'success',
       title: `Filled: ${trade.cost < 0 ? 'sold' : 'bought'} ${contracts} ${trade.kind.toLowerCase()}${contracts > 1 ? 's' : ''}`,

@@ -55,35 +55,37 @@ export const RESUME_AFTER_MS = 5000;
 /** Disclosed per-contract fee on PREDICT (mock). */
 export const PREDICT_FEE_PER_CONTRACT = 0.01;
 
-/**
- * Discipline audit. "Planned exit" is measured from real orders once the user has
- * opened some (the exit-plan box on the ticket); before that it shows a mock history.
- * `gap` simulates a user who fails that check.
- */
-export function disciplineAudit(gap = false, exits = { opened: 0, planned: 0 }) {
-  const exitPct = exits.opened > 0 ? Math.round((exits.planned / exits.opened) * 100) : 92;
-  const exitPass = !gap && exitPct >= 80;
-  return [
-    { label: 'Stayed within Smart Stake limits', value: '100%', pass: true },
-    { label: 'Orders with a planned exit', value: gap ? '71%' : `${exitPct}%`, pass: exitPass, need: 'Needs 80%' },
-    { label: 'Largest drop in 30 days', value: '−6.4%', pass: true, need: 'Limit 15%' },
-    { label: 'Active trading days', value: '19 of 21', pass: true },
-  ];
-}
-
 /** Margin graduation needs a Discipline Score above this, as well as the balance. */
 export const DISCIPLINE_THRESHOLD = 85;
 
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
 /**
- * Discipline Score (0-100) from the audit: Smart Stake adherence 25 points, planned exits
- * 35, drawdown control 20, consistency 20. Weighted toward habits a user controls.
+ * Discipline Score factors (0-100 in total), weighted toward habits a user controls.
+ * `stats` comes from real orders when there are some: { opened, planned, riskPctSum, opensToday }.
+ * Drawdown and active days are mock history. `gap` simulates oversized trades and skipped exit plans.
  */
-export function disciplineScore(gap = false, exits = { opened: 0, planned: 0 }) {
-  const exitPct = gap ? 71 : exits.opened > 0 ? (exits.planned / exits.opened) * 100 : 92;
-  const drawdown = 6.4; // % over 30 days (mock), limit 15%
-  const activeDays = 19 / 21; // mock
-  const score = 25 * 1 + 35 * Math.min(1, exitPct / 100) + 20 * (1 - (drawdown / 15) * 0.5) + 20 * activeDays;
-  return Math.round(Math.max(0, Math.min(100, score)));
+export function disciplineAudit(gap = false, stats = { opened: 0, planned: 0, riskPctSum: 0, opensToday: 0 }) {
+  const real = stats.opened > 0;
+  const sizing = gap ? 85 : real ? stats.riskPctSum / stats.opened : 40; // avg % of the Smart Stake limit used
+  const exitPct = gap ? 71 : real ? (stats.planned / stats.opened) * 100 : 92;
+  const drawdown = 6.4; // % over 30 days (mock); limit 15%
+  const opensToday = real ? stats.opensToday : 3;
+  const active = [19, 21]; // active days of the last 21 trading days (mock)
+
+  const factors = [
+    { label: 'Position sizing', value: `${Math.round(sizing)}% of limit`, need: 'Best at 50% or less', max: 20, points: 20 * clamp01(1 - Math.max(0, sizing - 50) / 50) },
+    { label: 'Planned exits', value: `${Math.round(exitPct)}% of trades`, need: 'Plan an exit on every trade', max: 25, points: 25 * clamp01(exitPct / 100) },
+    { label: 'Drawdown control', value: `−${drawdown}% in 30 days`, need: 'Limit 15%', max: 20, points: 20 * (1 - (drawdown / 15) * 0.5) },
+    { label: 'Trade frequency', value: `${opensToday} new today`, need: '6 or fewer a day', max: 15, points: 15 * clamp01(1 - Math.max(0, opensToday - 6) / 5) },
+    { label: 'Consistency', value: `${active[0]} of ${active[1]} days`, need: 'Steady, not bursts', max: 20, points: 20 * (active[0] / active[1]) },
+  ];
+  return factors.map((f) => ({ ...f, points: Math.round(f.points * 10) / 10, pass: f.points >= f.max * 0.75 }));
+}
+
+export function disciplineScore(gap = false, stats) {
+  const total = disciplineAudit(gap, stats).reduce((sum, f) => sum + f.points, 0);
+  return Math.round(Math.max(0, Math.min(100, total)));
 }
 
 export function scoreLabel(score) {

@@ -77,7 +77,17 @@ At every tier, no single order may put more than 25% of account equity at risk (
 **How graduation works.** The graduation engine reviews two things:
 
 1. Account value.
-2. A **Discipline Score** from 0 to 100, which must be **above 85**. It weighs Smart Stake adherence (25 points), orders with a planned exit (35), drawdown control (20) and consistency (20). The score is shown in the header next to the Road to $2K bar, so the requirement is never a surprise.
+2. A **Discipline Score** from 0 to 100, which must be **above 85**. It combines five factors, weighted toward habits the customer controls:
+
+| Factor | Points | What earns them |
+|---|---|---|
+| Position sizing | 20 | Average risk per trade at or under half the Smart Stake limit |
+| Planned exits | 25 | A profit-taking plan set on every trade |
+| Drawdown control | 20 | A small largest drop over 30 days (limit 15%) |
+| Trade frequency | 15 | Six or fewer new trades a day; overtrading costs points |
+| Consistency | 20 | Steady activity across days rather than bursts |
+
+The score is shown in the header next to the Road to $2K bar, with each factor's points in the customer's path screen, so the requirement is never a surprise.
 
 When a user qualifies, the engine **recommends** them to [PARTNER] for the next tier. [PARTNER] makes the final approval under its own account-approval process and applicable rules. These include the $2,000 minimum equity for margin accounts under FINRA Rule 4210 and options-account approval under FINRA Rule 2360. Margin accounts follow FINRA Rule 4210's intraday margin standards (SEC approval April 14, 2026; effective June 4, 2026; FINRA Regulatory Notice 26-10). These replaced the pattern-day-trader designation and its $25,000 minimum: equity must instead cover the account's market exposure throughout the day. Firms may phase in the change through October 20, 2027, so [PARTNER]'s current policy governs during that window.
 
@@ -137,13 +147,13 @@ Paths include licensing, revenue share, or acquisition.
 - It does not change [PARTNER]'s duty to seek best execution (FINRA Rule 5310).
 - Event contracts trade on the exchange and do not generate payment for order flow.
 
-**Pro membership ($9.99/month).** The "Journal & Ladders" tab previews these features, locked, with an upgrade prompt.
+**Plus membership ($9.99/month).** The "Journal & Ladders" tab previews these features, locked, with an upgrade prompt.
 
 - An automated trading journal: every trade with its plan, stop and outcome.
 - Seasonal Ladders ranked on Discipline Score, never on returns, with no cash prizes.
 - Lower fee tiers.
 - Faster access to deposited funds, subject to [PARTNER]'s credit policy.
-- Pro changes tools and fees only. It never changes a customer's risk limits, stops or approvals.
+- Plus changes tools and fees only. It never changes a customer's risk limits, stops or approvals.
 
 ---
 
@@ -191,7 +201,8 @@ Trading Simplified gives a regulated partner a ready-to-integrate onboarding cha
 | "Competitive seasonal ladders" | Challenges ranked on discipline, not returns, no cash prizes | Return-based leaderboards are a common gamification finding. |
 | Tier C "Unlimited Stake" | 25% Smart Stake applies at every tier | Resolves the contradiction with Section 5 (confirm this is your intent). |
 | Stock ticket; "no order may exceed 25%" | SPY options via the Probability Slider; Smart Stake limits *new* risk, and closing is never blocked | A literal 25% cap on every order could stop a customer from closing a position, which increases risk. |
-| Discipline "record" (unscored) | Discipline Score 0–100; margin graduation needs a score above 85 | A single visible number makes the requirement clear and auditable. |
+| Discipline "record" (unscored) | Five-factor Discipline Score 0–100; margin graduation needs a score above 85 | A single visible number makes the requirement clear and auditable. |
+| "Premium SaaS" / "Pro" | "Plus" membership | "Pro" suggests more trading power; this plan changes tools and fees, never limits. |
 | No stop-loss | Mandatory, system-enforced stop on every options trade, tied to the slider | Caps typical losses below the maximum; disclosed as not guaranteed. |
 | Kill switch described, trigger unspecified | Automatic, not customer-controlled; resumes after 5 healthy seconds | A safety control the customer can toggle invites misuse and questions; a resume rule prevents flicker. |
 | "Backend buys the play" / tokenized positions (considered) | The customer's own order through [PARTNER]; no tokens | A token representing an option is still a security, and holding the options for customers would make us a custodian and counterparty. |

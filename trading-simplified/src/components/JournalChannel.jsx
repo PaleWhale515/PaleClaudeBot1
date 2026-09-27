@@ -82,7 +82,7 @@ export default function JournalChannel({ score, notify }) {
             Unlock Automated Trading Journal &amp; Seasonal Ladders
           </h2>
           <p className="mt-3 text-ink-2">
-            Upgrade to Pro for <span className="font-semibold text-ink">$9.99/month</span>.
+            Upgrade to Plus for <span className="font-semibold text-ink">$9.99/month</span>.
           </p>
           <ul className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm text-ink-2">
             {FEATURES.map((f) => (
@@ -93,12 +93,12 @@ export default function JournalChannel({ score, notify }) {
             ))}
           </ul>
           <button
-            onClick={() => notify({ kind: 'info', title: 'Checkout opens here', body: 'In production, Pro is billed monthly through the app store or [PARTNER]. This prototype has no checkout.' })}
+            onClick={() => notify({ kind: 'info', title: 'Checkout opens here', body: 'In production, Plus is billed monthly through the app store or [PARTNER]. This prototype has no checkout.' })}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand py-3.5 font-semibold text-on-brand transition hover:brightness-110"
           >
-            Upgrade to Pro, $9.99/month
+            Upgrade to Plus, $9.99/month
           </button>
-          <p className="mt-3 text-xs text-ink-3">Cancel anytime. Pro changes tools and fees only; it never changes your risk limits or approvals.</p>
+          <p className="mt-3 text-xs text-ink-3">Cancel anytime. Plus changes tools and fees only; it never changes your risk limits or approvals.</p>
         </section>
       </div>
     </div>
