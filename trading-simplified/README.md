@@ -14,7 +14,7 @@ npm run build:artifact   # single self-contained page for claude.ai hosting
 
 **Hosted demo:** https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM (currently shared as "anyone with the link"). First-time visitors see a partner intro screen. Its choice is remembered per browser, **Overview** reopens it, and adding `#demo` to the link skips it for live pitches. `build:artifact` writes `dist-artifact/trading-simplified.html`: one self-contained page with React, app JS and CSS all inlined (no script CDN), plus a visible fallback message if the app fails to start. Republish that file to update the link.
 
-**Partner deck:** https://claude.ai/artifact/3FsxUgMfgXFGn2PrMfk9Lx, with a versioned copy of its slides in [`deck/`](deck/README.md). The white paper revisions are in [`docs/`](docs/white-paper-v3.8-revisions.md).
+**Partner deck:** https://claude.ai/artifact/3FsxUgMfgXFGn2PrMfk9Lx, with a versioned copy of its slides in [`deck/`](deck/README.md). The current white paper is [`docs/white-paper-v4.0.md`](docs/white-paper-v4.0.md) (live: https://claude.ai/code/artifact/683f1854-91f8-463b-957f-dfe129d16f3c), with a one-page [executive summary](docs/executive-summary-v4.0.md). The v3.8 revisions stay in `docs/` for history.
 
 ## Visual identity
 
@@ -53,11 +53,12 @@ src/
 
 ## Demo script
 
-1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
+1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01 commission per contract, each side, comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
 2. **TRADE (SPY options, the Probability Slider):**
    - Apply for options trading (tick the options risk disclosure, then submit). Approval takes a moment.
    - Pick **Up**, **Down** or **Stay in range**, an expiration from today (0DTE) to 1 year, and an estimated chance of profit from 1% to 99%. The engine picks the strikes: below 50% it buys a call, put or butterfly; from 50% up it sells a put spread, call spread or iron condor.
    - "You could make" and "You could lose" always show side by side, with a payoff chart. **Detailed** adds legs, spread width, IV and Greeks.
+   - Tier A opens on Up, 7 days, 20% (a bought call well inside Smart Stake); Tier B opens on 70%. Bought options stay at or out of the money, so asking for more than about 35% shows the closest available match.
    - On Tier A only single calls and puts are allowed; the 50–99% side (spreads) unlocks at Tier B. Smart Stake caps each trade's maximum loss.
    - Positions support **Reverse position** (Up ↔ Down at the same chance and expiry; in-range trades can't be reversed), **Close**, and **Close all positions**, each with a confirmation.
    - Every trade has a **System-Enforced Stop-Loss** (locked; half the premium for bought options, twice the credit for sold spreads). It updates as you drag the slider, and closes positions automatically on a price tick when hit.

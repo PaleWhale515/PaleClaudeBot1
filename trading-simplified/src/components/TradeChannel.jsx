@@ -28,7 +28,9 @@ export default function TradeChannel({
   const [mode, setMode] = useState('simple');
   const [direction, setDirection] = useState('up');
   const [expIdx, setExpIdx] = useState(EXPIRATIONS.indexOf(7));
-  const [target, setTarget] = useState(70);
+  // Cash accounts (Tier A) start on a bought option that fits well inside Smart Stake;
+  // margin tiers start on a defined-risk spread.
+  const [target, setTarget] = useState(tier.margin ? 70 : 20);
   const [width, setWidth] = useState(null);
   const [contracts, setContracts] = useState(1);
   const [exitPlan, setExitPlan] = useState(true);

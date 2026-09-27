@@ -52,7 +52,7 @@ export const KILL_SWITCH_MS = 500;
 export const RESUME_BELOW_MS = 200;
 export const RESUME_AFTER_MS = 5000;
 
-/** Disclosed per-contract fee on PREDICT (mock). */
+/** Disclosed commission per contract, charged on each side (open and close) (mock). */
 export const PREDICT_FEE_PER_CONTRACT = 0.01;
 
 /** Margin graduation needs a Discipline Score above this, as well as the balance. */

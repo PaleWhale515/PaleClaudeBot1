@@ -169,8 +169,10 @@ export function buildTrade({ S, baseIv, days, direction, target, width }) {
   const candidates = [];
 
   if (target < 0.5) {
-    if (direction === 'up') for (let k = lo; k <= hi; k++) candidates.push(longSingle('call', 'up', S, T, atm, k));
-    else if (direction === 'down') for (let k = lo; k <= hi; k++) candidates.push(longSingle('put', 'down', S, T, atm, k));
+    // Bought options stay at or out of the money: deep in-the-money strikes nudge the
+    // chance of profit toward 50% but cost hundreds or thousands of dollars more.
+    if (direction === 'up') for (let k = Math.round(S); k <= hi; k++) candidates.push(longSingle('call', 'up', S, T, atm, k));
+    else if (direction === 'down') for (let k = lo; k <= Math.round(S); k++) candidates.push(longSingle('put', 'down', S, T, atm, k));
     else for (let w = 1; w <= Math.max(2, Math.ceil(3 * sd)); w++) candidates.push(butterfly(S, T, atm, w));
   } else if (direction === 'up') {
     for (let k = lo; k <= Math.ceil(S + sd); k++) candidates.push(creditVertical('put', 'up', S, T, atm, k, W));
