@@ -57,7 +57,7 @@ export default function FlywheelPanel({
               <ol className="mt-4 space-y-4">
                 <Step done={balanceQualifies} title={`Grow your balance to ${fmtUSD(next.min, 0)}`} detail={balanceQualifies ? 'Done' : `${fmtUSD(next.min - balance)} to go`} />
                 <Step done={auditPass} title={`Discipline Score above ${DISCIPLINE_THRESHOLD}`} detail={auditPass ? `Done: ${score}/100` : `Now ${score}/100. See what to improve below.`} />
-                <Step done={false} pending={approvalPending} title={`${next.margin && !tier.margin ? 'Margin' : 'The upgrade'} is approved by [PARTNER]`} detail={approvalPending ? 'In review' : 'Last step'} />
+                <Step done={false} pending={approvalPending} title={`${next.margin && !tier.margin ? 'Margin' : 'The upgrade'} is approved by your broker`} detail={approvalPending ? 'In review' : 'Last step'} />
               </ol>
               <button
                 onClick={onRequestUpgrade}
@@ -65,7 +65,7 @@ export default function FlywheelPanel({
                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 font-semibold text-on-brand transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-3"
               >
                 {approvalPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {approvalPending ? 'Partner is reviewing' : eligible ? `Submit for ${next.name} approval` : `Not ready for ${next.name} yet`}
+                {approvalPending ? 'Your broker is reviewing' : eligible ? `Submit for ${next.name} approval` : `Not ready for ${next.name} yet`}
               </button>
             </section>
           )}
@@ -170,7 +170,7 @@ export default function FlywheelPanel({
             </label>
             <label className="mt-3 flex cursor-pointer items-start justify-between gap-3 border-t border-line pt-4 text-sm text-ink">
               <span>
-                Simulate a slow connection to [PARTNER]
+                Simulate a slow connection to your broker
                 <span className="block text-ink-3 num">
                   {killSwitch ? `Safe-State tripped at ${latency} ms. It resumes after 5 healthy seconds.` : `Now ${latency} ms. Safe-State trips above 500 ms.`}
                 </span>
@@ -180,8 +180,8 @@ export default function FlywheelPanel({
           </section>
 
           <p className="text-sm leading-relaxed text-ink-3">
-            We recommend upgrades. [PARTNER] makes the final decision under its own process and the rules that apply, including FINRA Rule 4210 ($2,000 minimum
-            for margin) and Rule 2360 (options). Margin accounts follow Rule 4210's intraday margin standards, which replaced the pattern-day-trader rule on June 4, 2026 (partners may phase them in through October 20, 2027). All figures are mock data.
+            We recommend upgrades. Your broker makes the final decision under its own process and the rules that apply, including FINRA Rule 4210 ($2,000 minimum
+            for margin) and Rule 2360 (options). Margin accounts follow Rule 4210's intraday margin standards, which replaced the pattern-day-trader rule on June 4, 2026 (brokers may phase them in through October 20, 2027). All figures are mock data.
           </p>
         </div>
       </aside>

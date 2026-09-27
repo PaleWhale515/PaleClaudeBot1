@@ -14,7 +14,7 @@ We bring first-time traders in through $20 predictions and graduate them to defi
 - **Trade:** the Probability Slider. The customer picks a direction, an expiration from 0DTE to 1 year, and a chance of profit from 1% to 99%. The engine picks the strikes and the strategy; every trade has a fixed maximum loss.
 - **Graduate:** margin needs a $2,000 balance, a Discipline Score above 85 and partner approval. Balance alone never upgrades anyone.
 - **Protect:** Smart Stake caps new risk at 25% of equity, a system-enforced stop-loss sits on every options trade, and an automatic Safe-State pauses trading when latency passes 500 ms.
-- **Earn:** a per-side micro-commission on every contract, a disclosed share of options order-flow payments, and Plus membership at $9.99 per month.
+- **Earn:** Plus membership at $9.99 per month during the pilot; per-side commissions and a disclosed share of options order-flow payments once a licensed owner switches them on.
 
 The company is built to be sold whole to a strategic buyer (an exchange, a broker, or a foreign firm entering the US) once a live pilot proves traction.
 
@@ -142,15 +142,23 @@ Posts the platform prompts can count as the firm's own advertising (FINRA Rule 2
 
 ## Revenue
 
-Three streams: a micro-commission on every contract, a disclosed share of options order-flow payments, and Plus at $9.99 per month. Each is worded to survive a buyer's due diligence.
+Revenue arrives in two phases, because per-trade fees require a license we don't hold. During the pilot we earn only a flat subscription; a licensed owner switches on the per-trade streams.
+
+### Phase 1: the pilot (now, no license)
+
+Plus at $9.99 per month is the only revenue: a flat fee that never depends on how much anyone trades. Customers trade in their own brokerage accounts (tastytrade and Schwab first, connected through [SnapTrade](https://snaptrade.com/pricing)) and their own Kalshi accounts; the brokers and Kalshi charge their own fees. Kalshi builder-code fees start only if counsel confirms they don't require NFA registration.
+
+### Phase 2: under a licensed owner
 
 | Stream | Channel | How it works | Disclosure |
 | --- | --- | --- | --- |
-| Per-contract commission | Predict and Trade | A micro-fee charged per side (open and close) on every contract executed: $0.01 in the prototype, final [FEE], shared with [PARTNER] | Shown on every ticket and confirmation |
-| Order-routing revenue (PFOF) | Trade: SPY options | [PARTNER] routes each customer's options order to market makers or exchanges that pay for order flow and shares a portion with us | SEC Rule 606 reports and account disclosures; [PARTNER]'s best-execution duty (FINRA 5310) is unchanged |
+| Per-contract commission | Predict and Trade | A micro-fee charged per side (open and close) on every contract executed: $0.01 in the prototype, final [FEE] | Shown on every ticket and confirmation |
+| Order-routing revenue (PFOF) | Trade: SPY options | The broker routes each customer's options order to market makers or exchanges that pay for order flow and shares a portion | SEC Rule 606 reports and account disclosures; best execution (FINRA 5310) is unchanged |
 | Plus membership | All | $9.99 per month, recurring | Plan terms at checkout |
 
-Payment for order flow remains legal in the US: the SEC withdrew its proposed Order Competition Rule and Regulation Best Execution on June 12, 2025 ([SEC](https://www.sec.gov/rules-regulations/2025/06/order-competition-rule)). Event contracts trade on the exchange and generate no order-flow payments.
+Why two phases: pay tied to each trade, whether a commission or a share of order-flow payments, is the hallmark of a broker-dealer, and collecting it unregistered violates Exchange Act Section 15(a). Even the SEC staff's April 13, 2026 statement for crypto trading interfaces, the most permissive recent guidance, still bars payment for order flow ([SEC](https://www.sec.gov/newsroom/speeches-statements/staff-statement-regarding-broker-dealer-registration-certain-user-interfaces-utilized-prepare-staff-statement-regarding-broker-dealer-registration-certain-user-interfaces-utilized)). For a buyer, Phase 2 is revenue its license unlocks on day one.
+
+Payment for order flow itself remains legal for registered brokers: the SEC withdrew its proposed Order Competition Rule and Regulation Best Execution on June 12, 2025 ([SEC](https://www.sec.gov/rules-regulations/2025/06/order-competition-rule)). Event contracts generate no order-flow payments.
 
 **Plus** unlocks the Journal & Ladders tab, shown today as a locked, blurred preview:
 
@@ -184,7 +192,7 @@ Acquirers pay for four things: customers and traction, technology that shortens 
 
 Path to a sale:
 
-1. Launch a small live pilot on a broker's API, with that broker as the licensed partner.
+1. Launch a live pilot through SnapTrade: customers connect their own tastytrade or Schwab accounts and trade in them, and Predict places orders on their own Kalshi accounts.
 2. Prove the numbers buyers ask for: funded accounts, cost to acquire, graduation rate to Tier B, 90-day retention and Plus conversion.
 3. Approach buyers' corporate development teams with a data room: metrics, code, compliance map and this paper.
 
@@ -196,26 +204,29 @@ Each rule below shapes a specific product decision; counsel must confirm how eac
 
 | Rule | What it requires | Where the product meets it |
 | --- | --- | --- |
-| [FINRA Rule 4210](https://www.finra.org/rules-guidance/rulebooks/finra-rules/4210) | $2,000 minimum equity for margin; intraday margin standards replaced the pattern-day-trader rule on June 4, 2026, phase-in through October 20, 2027 ([Regulatory Notice 26-10](https://www.finra.org/rules-guidance/notices/26-10)) | Balance gate for Tier B; partner's margin schedule applies |
+| Exchange Act Section 15(a) | Anyone paid per transaction for handling securities orders must register as a broker-dealer | The pilot earns flat Plus fees only; commissions and order-flow payments wait for a licensed owner |
+| CFTC and NFA introducing-broker rules | Soliciting event-contract orders for pay may require NFA registration | Kalshi builder-code fees start only after counsel confirms |
+| [FINRA Rule 4210](https://www.finra.org/rules-guidance/rulebooks/finra-rules/4210) | $2,000 minimum equity for margin; intraday margin standards replaced the pattern-day-trader rule on June 4, 2026, phase-in through October 20, 2027 ([Regulatory Notice 26-10](https://www.finra.org/rules-guidance/notices/26-10)) | Balance gate for Tier B; the broker's margin schedule applies |
 | [FINRA Rule 2360](https://www.finra.org/rules-guidance/rulebooks/finra-rules/2360) | Options account approval; Options Disclosure Document | Options application and ODD acknowledgment before the first trade |
 | Regulation T | No short sales or uncovered writing in cash accounts | Tier A buys calls and puts only; spreads need margin |
-| [SEC Rule 15c3-5](https://www.ecfr.gov/current/title-17/section-240.15c3-5) | Pre-trade risk controls for market access | Smart Stake and Safe-State add to the partner's controls |
-| SEC Rule 606 | Order-routing and payment-for-order-flow reports | Routing revenue disclosed |
+| [SEC Rule 15c3-5](https://www.ecfr.gov/current/title-17/section-240.15c3-5) | Pre-trade risk controls for market access | Smart Stake and Safe-State add to the broker's controls |
+| SEC Rule 606 | Order-routing and payment-for-order-flow reports | Routing revenue disclosed (Phase 2) |
 | [FINRA Rule 5310](https://www.finra.org/rules-guidance/rulebooks/finra-rules/5310) | Best execution | Unchanged by any routing revenue |
 | [FINRA Rule 2210](https://www.finra.org/rules-guidance/rulebooks/finra-rules/2210) and NFA Rule 2-29 | Communications with the public | Pre-approved Pulse Snapshots, no P&L |
-| CFTC exchange rules | Event contracts trade on a registered exchange and are centrally cleared | Predict routes through [PARTNER]; we are never counterparty |
-| Securities laws on tokenization | A token representing an option is still a security | No tokens; customers hold their own options at [PARTNER] |
+| CFTC exchange rules | Event contracts trade on a registered exchange and are centrally cleared | Predict orders go to Kalshi on each user's own account; we are never counterparty |
+| Securities laws on tokenization | A token representing an option is still a security | No tokens; customers hold their own options at their broker |
 
 ## Open decisions and next steps
 
-Six items must be settled before this paper goes to a buyer or pilot partner.
+Seven items must be settled before this paper goes to a buyer or pilot partner.
 
-- [ ] Choose a pilot broker partner and replace every [PARTNER]; buyer shortlist in Exit strategy.
+- [ ] Form the Iowa LLC ($50 filing; $30 online biennial report in odd-numbered years).
+- [ ] Test SnapTrade with a free Personal key on the founder's own tastytrade and Schwab accounts, then apply for Commercial keys (production needs KYC approval and a payment method).
+- [ ] Submit the Kalshi Builders application and get answers to its compliance questions, starting with NFA registration for builder-code fees.
 - [ ] Counsel confirms [REGISTRATION STATUS] and every row of the regulatory table.
-- [ ] Set the final per-side commission [FEE] and the partner's share of commissions and order-flow payments.
+- [ ] Set Phase 2 terms: the final per-side commission [FEE] and the share of order-flow payments.
 - [ ] Set Tier C prediction stake and order limits [TIER C LIMITS].
 - [ ] Replace mock drawdown and consistency inputs with live account data.
-- [ ] Confirm the partner's intraday-margin phase-in date under Regulatory Notice 26-10.
 
 Done in v4.0: Tier A accounts open the slider on a bought option (Up, 7 days, 20% chance of profit, about $176 at risk), and bought options stay at or out of the money, so first trades fit inside Smart Stake.
 

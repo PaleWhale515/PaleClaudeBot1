@@ -5,7 +5,7 @@ import { KILL_SWITCH_MS, SMART_STAKE_PCT, TIERS, fmtUSD } from '../data/mock.js'
 const CHANNELS = [
   {
     name: 'Predict',
-    body: 'New users start with simple up-or-down questions on market indexes. Each has a fixed maximum loss shown before they confirm, and each is a real exchange order routed through the partner.',
+    body: 'New users start with simple up-or-down questions on market indexes. Each has a fixed maximum loss shown before they confirm, and each is a real exchange order in the user’s own account.',
   },
   {
     name: 'Trade',
@@ -13,18 +13,18 @@ const CHANNELS = [
   },
   {
     name: 'Graduate',
-    body: 'Access grows only when account value and a discipline check both qualify. We recommend each upgrade. The partner approves it.',
+    body: 'Access grows only when account value and a discipline check both qualify. We recommend each upgrade. The user’s broker approves it.',
   },
 ];
 
 const CONTROLS = [
   { title: 'Smart Stake', body: `No order can put more than ${SMART_STAKE_PCT * 100}% of the balance, or the tier limit, at risk. Closing a position is never blocked.` },
-  { title: 'Safe-State', body: `Trading pauses automatically if the partner's execution API is slower than ${KILL_SWITCH_MS} ms, and resumes once it recovers.` },
-  { title: 'Partner approval', body: 'Margin and options approval stays with the partner, under FINRA Rules 4210 and 2360.' },
+  { title: 'Safe-State', body: `Trading pauses automatically if the broker's execution API is slower than ${KILL_SWITCH_MS} ms, and resumes once it recovers.` },
+  { title: 'Broker approval', body: "Margin and options approval stays with the user's broker, under FINRA Rules 4210 and 2360." },
 ];
 
 const STEPS = [
-  { title: 'Make a prediction', body: 'On Predict, tap Up or Down. Note the fixed stake and fee.' },
+  { title: 'Make a prediction', body: 'On Predict, tap Up or Down. Note the fixed stake and the exchange fee.' },
   { title: 'Use the Probability Slider', body: 'On Trade, apply for options, then slide from 1% to 99% and watch the payout and risk trade places.' },
   { title: 'Watch Safe-State trip', body: 'In Your path, simulate a slow connection. Trading pauses on its own.' },
   { title: 'Graduate to spreads', body: 'Open your balance, choose $2,450 and submit for approval. The 50–99% side unlocks.' },

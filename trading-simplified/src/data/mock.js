@@ -52,7 +52,7 @@ export const KILL_SWITCH_MS = 500;
 export const RESUME_BELOW_MS = 200;
 export const RESUME_AFTER_MS = 5000;
 
-/** Disclosed commission per contract, charged on each side (open and close) (mock). */
+/** Exchange fee per contract, set and kept by the exchange (mock). We take no per-trade fee in the pilot. */
 export const PREDICT_FEE_PER_CONTRACT = 0.01;
 
 /** Margin graduation needs a Discipline Score above this, as well as the balance. */

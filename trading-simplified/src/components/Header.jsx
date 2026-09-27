@@ -75,7 +75,7 @@ export default function Header({ balance, tier, channel, onChannel, killSwitch, 
             role="status"
             aria-live="polite"
             className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm ${killSwitch ? 'bg-down-soft text-down' : 'bg-up-soft text-up'}`}
-            title={`Trading pauses automatically if the connection to [PARTNER] is slower than ${KILL_SWITCH_MS} ms`}
+            title={`Trading pauses automatically if the connection to your broker is slower than ${KILL_SWITCH_MS} ms`}
           >
             <span className={`h-2 w-2 rounded-full ${killSwitch ? 'bg-down' : 'bg-up'}`} aria-hidden="true" />
             <span className="font-medium">{killSwitch ? 'Trading paused' : 'Live'}</span>
@@ -93,7 +93,7 @@ export default function Header({ balance, tier, channel, onChannel, killSwitch, 
           <div className="mx-auto flex max-w-[1200px] items-start gap-3 px-4 py-3 sm:px-6">
             <PauseCircle className="mt-0.5 h-5 w-5 shrink-0 text-down" />
             <p className="text-sm text-ink">
-              <span className="font-semibold text-down">API Latency: View-Only Mode.</span> The connection to [PARTNER] is slower than{' '}
+              <span className="font-semibold text-down">API Latency: View-Only Mode.</span> The connection to your broker is slower than{' '}
               {KILL_SWITCH_MS} ms, so trading paused automatically. It resumes on its own once the connection is healthy again. Prices are still live.
             </p>
           </div>

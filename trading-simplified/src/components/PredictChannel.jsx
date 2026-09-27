@@ -147,10 +147,10 @@ export default function PredictChannel({ killSwitch, balance, tier, cap, positio
           <dl className="mt-5 space-y-2.5 border-t border-line pt-5 text-sm">
             <Row label="If up wins, you get" value={fmtUSD(stake / upPrice)} />
             <Row label="If down wins, you get" value={fmtUSD(stake / downPrice)} />
-            <Row label="Fee" value={`${fmtUSD(PREDICT_FEE_PER_CONTRACT)} per contract, each side`} />
+            <Row label="Exchange fee" value={`${fmtUSD(PREDICT_FEE_PER_CONTRACT)} per contract`} />
           </dl>
           <p className="mt-4 text-sm leading-relaxed text-ink-3">
-            Each prediction is a real order on the exchange, sent through [PARTNER] and centrally cleared. We never take the other side.
+            Each prediction is a real order on the exchange, placed in your own exchange account and centrally cleared. We never take the other side.
           </p>
         </div>
 

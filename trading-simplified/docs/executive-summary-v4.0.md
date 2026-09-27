@@ -19,18 +19,18 @@ Trading Simplified takes first-time traders from a $20 prediction to a real opti
 
 ## Revenue
 
-| Stream | How it works |
-| --- | --- |
-| Per-contract commission | A micro-fee per side on every contract executed ($0.01 in the prototype) |
-| Order-routing revenue | A disclosed share of payment for order flow on SPY options orders |
-| Plus, $9.99 per month | Instant deposits, reduced commissions, an automated trading journal and Seasonal Ladders |
+| Stream | When | How it works |
+| --- | --- | --- |
+| Plus, $9.99 per month | Now, in the pilot | Instant deposits, reduced commissions, an automated trading journal and Seasonal Ladders |
+| Per-contract commission | Under a licensed owner | A micro-fee per side on every contract executed ($0.01 in the prototype) |
+| Order-routing revenue | Under a licensed owner | A disclosed share of payment for order flow on SPY options orders |
 
-Revenue grows with funded accounts and graduation to options, not with how often any one customer trades.
+Per-trade fees require a broker-dealer license, so the pilot earns a flat subscription only; a buyer's license switches the other two on from day one.
 
 ## The ask
 
 We intend to sell the company whole to a strategic buyer: a prediction-market exchange (Kalshi, Polymarket), an online broker (Interactive Brokers, Robinhood, Webull) or a foreign firm entering the US market.
 
-Next: a live pilot with a broker partner to prove funded accounts, graduation rate and retention, then a data room for buyers' corporate development teams.
+Next: a live pilot where users connect their own tastytrade, Schwab and Kalshi accounts, to prove funded accounts, graduation rate and retention, then a data room for buyers' corporate development teams.
 
 Demo: [Trading Simplified](https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM). Full detail: [White Paper v4.0](white-paper-v4.0.md). Contact: [CONTACT].

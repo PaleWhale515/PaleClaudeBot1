@@ -337,8 +337,8 @@ export default function TradeChannel({
           {killSwitch ? 'Trading paused' : `${trade.cost < 0 ? 'Sell' : 'Buy'} ${qty} ${trade.kind.toLowerCase()}${qty > 1 ? 's' : ''}`}
         </button>
         <p className="text-xs leading-relaxed text-ink-3">
-          Sent to [PARTNER] as one order; the options sit in your own account. Chance of profit is an estimate from option prices, not a guarantee. SPY options can be exercised early,
-          and each contract covers 100 shares. Commission $0; regulatory fees may apply.
+          Sent to your broker as one order; the options sit in your own account. Chance of profit is an estimate from option prices, not a guarantee. SPY options can be exercised early,
+          and each contract covers 100 shares. We charge no commission; your broker's and regulatory fees may apply.
         </p>
       </aside>
     </div>
@@ -351,7 +351,7 @@ function Gate({ block, optionsPending, onApplyOptions, onOpenPath }) {
     return (
       <div className="rounded-2xl bg-gold-soft p-4 text-sm text-gold-ink">
         <p className="flex items-start gap-2 font-semibold">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0" /> Options trading needs approval from [PARTNER]
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" /> Options trading needs approval from your broker
         </p>
         <label className="mt-3 flex cursor-pointer items-start gap-2">
           <input id="odd-ack" type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[rgb(var(--brand))]" />
@@ -365,7 +365,7 @@ function Gate({ block, optionsPending, onApplyOptions, onOpenPath }) {
           className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand py-2.5 font-semibold text-on-brand transition enabled:hover:brightness-110 disabled:opacity-45"
         >
           {optionsPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {optionsPending ? 'Partner is reviewing' : 'Apply for options trading'}
+          {optionsPending ? 'Your broker is reviewing' : 'Apply for options trading'}
         </button>
       </div>
     );
@@ -376,7 +376,7 @@ function Gate({ block, optionsPending, onApplyOptions, onOpenPath }) {
         <p className="flex items-start gap-2">
           <Lock className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            <span className="font-semibold">The 50–99% side sells spreads,</span> which need a margin account (Tier B, with partner approval). Below 50% you can buy single calls and puts today.
+            <span className="font-semibold">The 50–99% side sells spreads,</span> which need a margin account (Tier B, with broker approval). Below 50% you can buy single calls and puts today.
           </span>
         </p>
         <button onClick={onOpenPath} className="rounded-full bg-brand px-4 py-1.5 font-semibold text-on-brand hover:brightness-110">
@@ -625,7 +625,7 @@ export function reverseBlock(p, cap, tier, killSwitch, spot) {
   if (killSwitch) return { code: 'paused', text: 'Trading is paused.' };
   if (p.trade.direction === 'range') return { code: 'range', text: 'An in-range trade has no opposite direction. Close it instead.' };
   const mirror = mirrorOf(p.trade, spot, BASE_IV);
-  if (mirror.spreadNeeded && !tier.margin) return { code: 'spreads', text: 'The reversed trade is a spread, which needs a margin account (Tier B, with partner approval).' };
+  if (mirror.spreadNeeded && !tier.margin) return { code: 'spreads', text: 'The reversed trade is a spread, which needs a margin account (Tier B, with broker approval).' };
   if (mirror.maxLoss * p.contracts > cap) return { code: 'size', text: `The reversed trade could lose ${fmtUSD(mirror.maxLoss * p.contracts)}, over your ${fmtUSD(cap)} Smart Stake limit.` };
   return null;
 }
@@ -671,7 +671,7 @@ function describe(t) {
   }
 }
 
-/** Tax-reporting support (white paper §5): cost basis and realized P&L; official 1099s come from the partner. */
+/** Tax-reporting support (white paper §5): cost basis and realized P&L; official 1099s come from the broker. */
 function copyCostBasis(orders, notify) {
   const rows = [
     ['time', 'action', 'trade', 'contracts', 'price_per_share', 'total', 'realized'],

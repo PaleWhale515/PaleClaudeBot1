@@ -20,8 +20,8 @@ const SAMPLE_LADDER = [
 const FEATURES = [
   'An automated journal of every trade, with your plan, stop and outcome',
   'Seasonal Ladders ranked on Discipline Score, never on returns',
-  'Lower fee tiers',
-  'Faster access to deposits, subject to [PARTNER] credit policy',
+  'Lower commission tiers, once commissions apply',
+  "Faster access to deposits, where your broker offers it",
 ];
 
 export default function JournalChannel({ score, notify }) {
@@ -93,7 +93,7 @@ export default function JournalChannel({ score, notify }) {
             ))}
           </ul>
           <button
-            onClick={() => notify({ kind: 'info', title: 'Checkout opens here', body: 'In production, Plus is billed monthly through the app store or [PARTNER]. This prototype has no checkout.' })}
+            onClick={() => notify({ kind: 'info', title: 'Checkout opens here', body: 'In production, Plus is billed monthly through the app store. This prototype has no checkout.' })}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand py-3.5 font-semibold text-on-brand transition hover:brightness-110"
           >
             Upgrade to Plus, $9.99/month

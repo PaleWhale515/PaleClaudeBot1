@@ -143,7 +143,7 @@ export default function App() {
       healthySince.current = null;
       if (!killSwitch) {
         setKillSwitch(true);
-        notify({ kind: 'warning', title: 'Trading paused automatically', body: `The connection to [PARTNER] is slower than ${KILL_SWITCH_MS} ms. No orders are sent until it recovers.` });
+        notify({ kind: 'warning', title: 'Trading paused automatically', body: `The connection to your broker is slower than ${KILL_SWITCH_MS} ms. No orders are sent until it recovers.` });
       }
     } else if (killSwitch) {
       if (latency >= RESUME_BELOW_MS) {
@@ -166,7 +166,7 @@ export default function App() {
         kind: up ? 'success' : 'warning',
         title: up ? `Welcome to ${tier.name}` : `Back to ${tier.name} limits`,
         body: up
-          ? `[PARTNER] approved the upgrade. ${tier.margin ? 'Margin is now available on Trade.' : ''}`
+          ? `Your broker approved the upgrade. ${tier.margin ? 'Margin is now available on Trade.' : ''}`
           : `Your balance is below ${fmtUSD(TIERS[tierIdx + 1].min, 0)}, so lower limits apply until it recovers.`,
       });
       prevTier.current = tier.id;
@@ -185,7 +185,7 @@ export default function App() {
     if (!eligible || approvalPending) return;
     const target = nextTier;
     setApprovalPending(true);
-    notify({ kind: 'info', title: `Sent for ${target.name} approval`, body: '[PARTNER] is reviewing the upgrade.' });
+    notify({ kind: 'info', title: `Sent for ${target.name} approval`, body: 'Your broker is reviewing the upgrade.' });
     setTimeout(() => {
       setApprovedTierId(target.id);
       setApprovalPending(false);
@@ -195,7 +195,7 @@ export default function App() {
   const applyOptions = () => {
     if (optionsApproved || optionsPending) return;
     setOptionsPending(true);
-    notify({ kind: 'info', title: 'Options application sent', body: '[PARTNER] is reviewing it.' });
+    notify({ kind: 'info', title: 'Options application sent', body: 'Your broker is reviewing it.' });
     setTimeout(() => {
       setOptionsPending(false);
       setOptionsApproved(true);
@@ -225,7 +225,7 @@ export default function App() {
     notify({
       kind: 'success',
       title: `You predicted ${side === 'UP' ? 'up' : 'down'}`,
-      body: `${fmtUSD(stake, 0)} at ${Math.round(price * 100)}¢ plus a ${fmtUSD(fee)} fee. Sent to the exchange.`,
+      body: `${fmtUSD(stake, 0)} at ${Math.round(price * 100)}¢ plus a ${fmtUSD(fee)} exchange fee. Sent to the exchange.`,
     });
   };
 
@@ -246,7 +246,7 @@ export default function App() {
     notify({
       kind: 'success',
       title: `Filled: ${trade.cost < 0 ? 'sold' : 'bought'} ${contracts} ${trade.kind.toLowerCase()}${contracts > 1 ? 's' : ''}`,
-      body: `${tradeName(trade)} at ${premium(trade.cost)}. The options are in your account at [PARTNER].`,
+      body: `${tradeName(trade)} at ${premium(trade.cost)}. The options are in your own brokerage account.`,
     });
   };
 
@@ -348,7 +348,7 @@ export default function App() {
 
         <footer className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-ink-3 sm:flex-row sm:items-start sm:justify-between">
           <p className="max-w-2xl leading-relaxed">
-            Prototype with simulated prices, balances and fills. In production, custody, execution and account approval come from [PARTNER]. Not an offer to buy or
+            Prototype with simulated prices, balances and fills. In production, custody, execution and account approval come from each user's own broker. Not an offer to buy or
             sell securities or event contracts.
           </p>
           <div className="flex shrink-0 gap-4">
