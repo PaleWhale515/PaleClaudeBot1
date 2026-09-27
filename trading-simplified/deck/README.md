@@ -14,14 +14,14 @@ deck/
 |---|---|---|
 | 1 | `cover` | Thesis: the on-ramp from first trade to margin-ready |
 | 2 | `gap` | Legacy broker apps vs simplified apps vs our path |
-| 3 | `how` | Predict, Trade, Graduate |
+| 3 | `how` | Predict, Trade (SPY options by probability), Graduate |
 | 4 | `predict` | Order flow: user → Smart Stake → partner → exchange → clearing; $20 / $100 stakes |
-| 5 | `trade` | Market context metrics; ticket rules incl. Reverse / Close / Close all |
-| 6 | `graduation` | Three gates and the tier table |
-| 7 | `controls` | Smart Stake, Safe-State switch, partner approval, non-custodial |
+| 5 | `trade` | The Probability Slider: slider-to-trade table, a worked example, the enforced stop-loss |
+| 6 | `graduation` | Three gates ($2,000, Discipline Score above 85, partner approval) and the tier table |
+| 7 | `controls` | Smart Stake, automatic Safe-State, enforced stop-loss; partner-approved and non-custodial |
 | 8 | `statement` | "Every position is a real exchange order." |
 | 9 | `growth` | Pulse Snapshot and sharing guardrails |
-| 10 | `revenue` | Per-contract fee, order-routing revenue (Trade only), $9.99 membership |
+| 10 | `revenue` | Per-contract fee, order-routing revenue (Trade only), $9.99/month Plus membership |
 | 11 | `partner` | What the partner gets; deal paths |
 | 12 | `demo` | Four-step live demo with a link to the prototype |
 | 13 | `next` | Next steps and contact |
