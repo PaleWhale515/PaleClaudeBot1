@@ -2,7 +2,13 @@
 
 Sep 27, 2026 · Live version: https://claude.ai/code/artifact/10cc3c7d-ccd8-44f8-a0e9-8c481bc80c41
 
-Draft answers for the [Kalshi Builders](https://kalshi.com/builders) form. Grants reportedly run up to $10,000 in USDC; the form's exact questions weren't reachable from here, so paste each section into the matching field.
+Kalshi has no application form: builders use **Get in Touch** on [Kalshi Builders](https://kalshi.com/builders) and can join the Builders Channel. Send the short message below first; the sections after it are the detail to share when Kalshi replies.
+
+What Kalshi's FAQ says (checked from the page, Sep 27, 2026): funding varies by scope, from small grants for individual developers to larger investments for teams; builders anywhere can apply; an idea or a working prototype are both welcome; support includes engineering help, API priority access, marketing and partnership; and **builders keep full ownership and intellectual property**, so a grant doesn't get in the way of selling the company later.
+
+## Get in Touch message
+
+> Hi Kalshi Builders team. I'm a solo founder in Iowa building Trading Simplified, a mobile-first app that turns Kalshi markets into one tap: UP or DOWN with a fixed $20 stake, for first-time traders who find an order book intimidating. Every stake is capped at 25% of the account, trading pauses automatically on a slow connection, and a Discipline Score rewards planned exits instead of volume. A working prototype is live: https://claude.ai/artifact/PNL9tynU4ENZ54jVuu3miM. I'm asking for a $10,000 individual-developer grant and API support to connect it to Kalshi and run a 100-user pilot in 16 weeks, with a builder code on every order. Happy to share the full plan. [NAME], [EMAIL]
 
 ## Project summary
 
@@ -48,5 +54,5 @@ Questions to ask Kalshi before accepting:
 
 - [ ] Does earning builder-code fees require us to register with the NFA as an introducing broker?
 - [ ] Is the builder code for on-chain markets only (Solana, Base), or also for API orders on Kalshi accounts?
-- [ ] How are grants paid: USDC to a crypto wallet, or US dollars to a bank account?
+- [ ] How are grants paid: USDC to a crypto wallet, or US dollars to a bank account? And is the grant tied to building on Solana or Base (the co-sponsors)?
 - [ ] Can users authorize our app without sharing their Kalshi API keys with us?
