@@ -5,7 +5,9 @@ import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
 import Toasts from './components/Toasts.jsx';
 import IntroScreen from './components/IntroScreen.jsx';
+import JournalChannel from './components/JournalChannel.jsx';
 import {
+  DISCIPLINE_THRESHOLD,
   KILL_SWITCH_MS,
   PREDICT_FEE_PER_CONTRACT,
   RESUME_AFTER_MS,
@@ -14,12 +16,13 @@ import {
   TIERS,
   TRADE_SYMBOLS,
   disciplineAudit,
+  disciplineScore,
   fmtUSD,
   liveMark,
   smartStakeCap,
   tierFor,
 } from './data/mock.js';
-import { markLegs, mirrorOf, tradeName } from './data/options.js';
+import { markLegs, mirrorOf, stopLossFor, tradeName } from './data/options.js';
 
 const SPY_IV = TRADE_SYMBOLS.find((s) => s.symbol === 'SPY').iv / 100;
 
@@ -92,7 +95,9 @@ export default function App() {
   const tier = TIERS[Math.min(balanceIdx, approvedIdx)];
   const tierIdx = TIERS.indexOf(tier);
   const audit = disciplineAudit(disciplineGap, exits);
-  const disciplinePass = audit.every((a) => a.pass);
+  // Margin graduation needs the balance AND a Discipline Score above the threshold.
+  const score = disciplineScore(disciplineGap, exits);
+  const disciplinePass = score > DISCIPLINE_THRESHOLD;
   const nextTier = TIERS[tierIdx + 1];
   const balanceQualifies = balanceIdx > tierIdx;
   const eligible = balanceQualifies && disciplinePass;
@@ -231,9 +236,9 @@ export default function App() {
 
   const openRecord = (trade, contracts) => ({ id: newId(), time: now(), action: trade.cost < 0 ? 'Sell' : 'Buy', name: tradeName(trade), contracts, price: trade.cost, realized: null });
 
-  const handleOpen = ({ trade, contracts, exitPlan }) => {
+  const handleOpen = ({ trade, contracts, exitPlan, stopLoss }) => {
     if (killSwitch) return;
-    setOptPositions((list) => [{ id: newId(), trade, contracts, exitPlan }, ...list]);
+    setOptPositions((list) => [{ id: newId(), trade, contracts, exitPlan, stopLoss }, ...list]);
     setOrders((list) => [openRecord(trade, contracts), ...list]);
     setExits((e) => ({ opened: e.opened + 1, planned: e.planned + (exitPlan ? 1 : 0) }));
     notify({
@@ -279,10 +284,24 @@ export default function App() {
     const mirror = mirrorOf(p.trade, spot, SPY_IV);
     if ((mirror.spreadNeeded && !tier.margin) || mirror.maxLoss * p.contracts > smartStakeCap(balance, tier)) return;
     const { total } = closePositions([id], 'Reverse');
-    setOptPositions((list) => [{ id: newId(), trade: mirror, contracts: p.contracts, exitPlan: p.exitPlan }, ...list]);
+    setOptPositions((list) => [{ id: newId(), trade: mirror, contracts: p.contracts, exitPlan: p.exitPlan, stopLoss: stopLossFor(mirror) }, ...list]);
     setOrders((list) => [openRecord(mirror, p.contracts), ...list]);
     notify({ kind: 'success', title: `Reversed to ${mirror.direction === 'up' ? 'Up' : 'Down'}`, body: `Now holding ${tradeName(mirror)}. Realized ${signed(total)} on the old trade.` });
   };
+
+  // System-enforced stop-loss: on every price tick, close any position whose loss has reached
+  // its stop. While Safe-State has paused routing, stops wait until trading resumes.
+  useEffect(() => {
+    if (killSwitch || optPositions.length === 0) return;
+    const hit = optPositions.filter((p) => (markLegs(p.trade.legs, spot, p.trade.days, SPY_IV) - p.trade.cost) * 100 * p.contracts <= -p.stopLoss * p.contracts);
+    if (hit.length === 0) return;
+    const { total } = closePositions(
+      hit.map((p) => p.id),
+      'Stop-loss',
+    );
+    notify({ kind: 'warning', title: `Stop-loss closed ${hit.length === 1 ? tradeName(hit[0].trade) : `${hit.length} positions`}`, body: `Realized ${signed(total)}. The system-enforced stop did its job.` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceTick, killSwitch]);
 
   return (
     <div className="min-h-screen">
@@ -295,12 +314,15 @@ export default function App() {
         latency={latency}
         onOpenFlywheel={() => setFlywheelOpen(true)}
         eligibleFor={eligible ? nextTier : null}
+        score={score}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
 
       <main className="mx-auto max-w-[1200px] px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
-        {channel === 'predict' ? (
+        {channel === 'journal' ? (
+          <JournalChannel orders={orders} score={score} notify={notify} />
+        ) : channel === 'predict' ? (
           <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} cap={smartStakeCap(balance, tier)} positions={positions} onPredict={handlePredict} notify={notify} />
         ) : (
           <TradeChannel
@@ -351,6 +373,7 @@ export default function App() {
         eligible={eligible}
         approvalPending={approvalPending}
         onRequestUpgrade={requestUpgrade}
+        score={score}
         slowLink={slowLink}
         setSlowLink={setSlowLink}
         killSwitch={killSwitch}

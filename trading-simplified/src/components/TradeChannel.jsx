@@ -3,7 +3,7 @@ import { ArrowDown, ArrowLeftRight, ArrowUp, ClipboardCopy, FileText, Loader2, L
 import PriceChart from './PriceChart.jsx';
 import PayoffChart from './PayoffChart.jsx';
 import { SMART_STAKE_PCT, TRADE_SYMBOLS, fmtNum, fmtUSD, makeSeries, seedFrom, smartStakeCap } from '../data/mock.js';
-import { DIRECTIONS, EXPIRATIONS, WIDTHS, buildTrade, expiryLabel, markLegs, mirrorOf, tradeName } from '../data/options.js';
+import { DIRECTIONS, EXPIRATIONS, WIDTHS, buildTrade, expiryLabel, markLegs, mirrorOf, stopLossFor, stopLossRule, tradeName } from '../data/options.js';
 
 const SPY = TRADE_SYMBOLS.find((s) => s.symbol === 'SPY');
 const BASE_IV = SPY.iv / 100;
@@ -142,7 +142,7 @@ export default function TradeChannel({
           <div className="flex rounded-full bg-sunken p-0.5 text-sm" role="tablist" aria-label="Detail level">
             {[
               ['simple', 'Simplified'],
-              ['pro', 'Pro'],
+              ['pro', 'Detailed'],
             ].map(([id, label]) => (
               <button
                 key={id}
@@ -264,6 +264,27 @@ export default function TradeChannel({
 
         {mode === 'pro' && <ProDetails trade={trade} days={days} qty={qty} width={width} setWidth={setWidth} />}
 
+        {/* System-enforced stop-loss: always on, follows the slider, can't be removed. */}
+        <div className="rounded-2xl border border-line bg-surface p-4" aria-labelledby="stop-label">
+          <div className="flex items-center justify-between gap-3">
+            <p id="stop-label" className="flex items-center gap-2 text-sm font-medium text-ink">
+              <Lock className="h-4 w-4 text-ink-2" aria-hidden="true" />
+              System-Enforced Stop-Loss
+            </p>
+            <span className="rounded-full bg-sunken px-2 py-0.5 text-xs font-medium text-ink-2">Always on</span>
+          </div>
+          <div className="mt-2 flex items-baseline justify-between gap-3">
+            <output htmlFor="pop" aria-readonly="true" className="font-display text-2xl font-semibold text-down num">
+              −{fmtUSD(stopLossFor(trade) * qty, 0)}
+            </output>
+            <span className="text-sm text-ink-3 num">{Math.round((stopLossFor(trade) / trade.maxLoss) * 100)}% of the max loss</span>
+          </div>
+          <p className="mt-1 text-sm text-ink-3">
+            Closes the trade automatically if it loses {stopLossRule(trade)}. It moves with the slider and can't be removed. A stop closes at the next available price,
+            which can be worse in a fast market.
+          </p>
+        </div>
+
         {/* Size */}
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -307,7 +328,7 @@ export default function TradeChannel({
         </label>
 
         <button
-          onClick={() => onOpen({ trade, contracts: qty, exitPlan })}
+          onClick={() => onOpen({ trade, contracts: qty, exitPlan, stopLoss: stopLossFor(trade) })}
           disabled={Boolean(block)}
           className="btn-exec rounded-full bg-brand py-3.5 text-base font-semibold text-on-brand transition enabled:hover:brightness-110 enabled:active:scale-[0.99]"
         >
@@ -509,7 +530,7 @@ function PositionsCard({ positions, spot, balance, tier, killSwitch, onClose, on
                     </p>
                     <p className="text-sm text-ink-3 num">
                       {p.contracts} contract{p.contracts > 1 ? 's' : ''}, {premiumLabel(p.trade.cost)} each, expires {expiryDate(p.trade.days)}
-                      {p.exitPlan ? ', exit planned' : ''}
+                      {p.exitPlan ? ', exit planned' : ''}, stop at −{fmtUSD(p.stopLoss * p.contracts, 0)}
                     </p>
                   </div>
                   <div className="flex items-center gap-6">

@@ -1,9 +1,13 @@
 import { ChevronRight, Moon, PauseCircle, Sun } from 'lucide-react';
 import Logo from './Logo.jsx';
 import ChannelToggle from './ChannelToggle.jsx';
-import { GRADUATION_TARGET, KILL_SWITCH_MS, fmtUSD } from '../data/mock.js';
+import InfoTip from './InfoTip.jsx';
+import { DISCIPLINE_THRESHOLD, GRADUATION_TARGET, KILL_SWITCH_MS, fmtUSD, scoreLabel } from '../data/mock.js';
 
-export default function Header({ balance, tier, channel, onChannel, killSwitch, latency, onOpenFlywheel, eligibleFor, theme, onToggleTheme }) {
+const SCORE_TIP = `Margin graduation requires both a $2,000 balance AND a Discipline Score above ${DISCIPLINE_THRESHOLD} to ensure safe trading habits.`;
+
+export default function Header({ balance, tier, channel, onChannel, killSwitch, latency, onOpenFlywheel, eligibleFor, score, theme, onToggleTheme }) {
+  const scoreOk = score > DISCIPLINE_THRESHOLD;
   const progress = Math.min(100, (balance / GRADUATION_TARGET) * 100);
   const reached = balance >= GRADUATION_TARGET;
 
@@ -12,7 +16,7 @@ export default function Header({ balance, tier, channel, onChannel, killSwitch, 
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
         <Logo />
 
-        <div className="order-last w-full sm:order-none sm:w-auto">
+        <div className="order-last w-full">
           <ChannelToggle channel={channel} onChange={onChannel} />
         </div>
 
@@ -47,6 +51,16 @@ export default function Header({ balance, tier, channel, onChannel, killSwitch, 
             <span className="grid h-6 w-6 place-items-center rounded-full bg-gold font-display text-xs font-bold text-ink">{tier.id}</span>
             <span className="text-sm font-semibold text-gold-ink num">{fmtUSD(balance, 0)}</span>
           </button>
+
+          {/* Discipline Score sits beside Road to $2K: graduation needs both. */}
+          <div className={`flex items-center gap-1.5 rounded-full py-1 pl-3 pr-1.5 text-sm ${scoreOk ? 'bg-brand-soft' : 'bg-gold-soft'}`}>
+            <span className={`font-medium ${scoreOk ? 'text-brand' : 'text-gold-ink'}`}>
+              <span className="hidden lg:inline">Discipline </span>Score:{' '}
+              <span className="font-display font-semibold num">{score}/100</span>
+              <span className="hidden sm:inline"> - {scoreLabel(score)}</span>
+            </span>
+            <InfoTip text={SCORE_TIP} label="What is the Discipline Score?" />
+          </div>
 
           <button
             onClick={onToggleTheme}

@@ -209,6 +209,22 @@ export function tradeName(t) {
   return `SPY ${strikes} ${t.kind.toLowerCase()}`;
 }
 
+/**
+ * System-enforced stop-loss, in dollars per contract. It is mandatory and follows the
+ * slider: bought options (below 50%) stop at half the premium paid; sold spreads
+ * (50% and up) stop when the loss reaches twice the credit received. Never more than
+ * the trade's maximum loss. A stop closes at the next available price, which can be worse.
+ */
+export function stopLossFor(trade) {
+  const raw = trade.cost < 0 ? -trade.cost * 2 * MULT : trade.cost * 0.5 * MULT;
+  return Math.round(Math.min(trade.maxLoss, Math.max(1, raw)) * 100) / 100;
+}
+
+/** Plain-language rule behind the stop, for the ticket. */
+export function stopLossRule(trade) {
+  return trade.cost < 0 ? 'twice the credit you receive' : 'half of what you pay';
+}
+
 /** The same trade pointing the other way (Up <-> Down), at the same chance, expiry and width. */
 export function mirrorOf(trade, S, baseIv) {
   return buildTrade({ S, baseIv, days: trade.days, direction: trade.direction === 'up' ? 'down' : 'up', target: trade.target, width: trade.width ?? null });

@@ -71,6 +71,25 @@ export function disciplineAudit(gap = false, exits = { opened: 0, planned: 0 }) 
   ];
 }
 
+/** Margin graduation needs a Discipline Score above this, as well as the balance. */
+export const DISCIPLINE_THRESHOLD = 85;
+
+/**
+ * Discipline Score (0-100) from the audit: Smart Stake adherence 25 points, planned exits
+ * 35, drawdown control 20, consistency 20. Weighted toward habits a user controls.
+ */
+export function disciplineScore(gap = false, exits = { opened: 0, planned: 0 }) {
+  const exitPct = gap ? 71 : exits.opened > 0 ? (exits.planned / exits.opened) * 100 : 92;
+  const drawdown = 6.4; // % over 30 days (mock), limit 15%
+  const activeDays = 19 / 21; // mock
+  const score = 25 * 1 + 35 * Math.min(1, exitPct / 100) + 20 * (1 - (drawdown / 15) * 0.5) + 20 * activeDays;
+  return Math.round(Math.max(0, Math.min(100, score)));
+}
+
+export function scoreLabel(score) {
+  return score >= 90 ? 'Excellent' : score > DISCIPLINE_THRESHOLD ? 'Good' : score >= 70 ? 'Fair' : 'Needs work';
+}
+
 export function tierFor(balance) {
   return TIERS.find((t) => balance >= t.min && balance <= t.max) ?? TIERS[TIERS.length - 1];
 }

@@ -59,6 +59,7 @@ Instead of an options chain, the user answers three questions and the platform p
 - **Simplified and Pro views.** Simplified shows the plain-language trade, payouts, breakevens and a payoff chart. Pro adds the exact legs, spread width, implied volatility, and position Greeks (delta, gamma, theta, vega). Both views keep every safeguard.
 - **Market context.** The Mechanical Data Dashboard shows IV Rank, the expected move by expiration, and the estimated chance of profit. These are context, not recommendations.
 - **Execution:** Each trade is sent to [PARTNER] as one order, and the options sit in the customer's own account. That is the 1:1 purchase: the customer owns the real contracts. Trading Simplified does not buy options for its own account or issue tokens that represent them, which would make it a custodian and the customer's counterparty. [PARTNER] is responsible for execution quality, clearing and settlement.
+- **System-enforced stop-loss.** Every options trade carries a mandatory stop the customer cannot remove. It follows the slider: bought options stop at half the premium paid; sold spreads stop when the loss reaches twice the credit received, never beyond the trade's maximum loss. A stop closes at the next available price, which can be worse in a fast market, so Smart Stake still sizes every trade on its full maximum loss. While Safe-State has paused routing, stops wait until trading resumes.
 - **Disclosures.** SPY options can be exercised early, and each contract covers 100 shares. Customers acknowledge *Characteristics and Risks of Standardized Options* before their options application is sent.
 
 ## 4. Graduated Access (The Graduation Flywheel)
@@ -76,7 +77,7 @@ At every tier, no single order may put more than 25% of account equity at risk (
 **How graduation works.** The graduation engine reviews two things:
 
 1. Account value.
-2. A discipline record: adherence to Smart Stake limits, use of defined exits, and drawdown history.
+2. A **Discipline Score** from 0 to 100, which must be **above 85**. It weighs Smart Stake adherence (25 points), orders with a planned exit (35), drawdown control (20) and consistency (20). The score is shown in the header next to the Road to $2K bar, so the requirement is never a surprise.
 
 When a user qualifies, the engine **recommends** them to [PARTNER] for the next tier. [PARTNER] makes the final approval under its own account-approval process and applicable rules. These include the $2,000 minimum equity for margin accounts under FINRA Rule 4210 and options-account approval under FINRA Rule 2360. Margin accounts follow FINRA Rule 4210's intraday margin standards (SEC approval April 14, 2026; effective June 4, 2026; FINRA Regulatory Notice 26-10). These replaced the pattern-day-trader designation and its $25,000 minimum: equity must instead cover the account's market exposure throughout the day. Firms may phase in the change through October 20, 2027, so [PARTNER]'s current policy governs during that window.
 
@@ -136,12 +137,13 @@ Paths include licensing, revenue share, or acquisition.
 - It does not change [PARTNER]'s duty to seek best execution (FINRA Rule 5310).
 - Event contracts trade on the exchange and do not generate payment for order flow.
 
-**Premium membership ($9.99/month).**
+**Pro membership ($9.99/month).** The "Journal & Ladders" tab previews these features, locked, with an upgrade prompt.
 
+- An automated trading journal: every trade with its plan, stop and outcome.
+- Seasonal Ladders ranked on Discipline Score, never on returns, with no cash prizes.
 - Lower fee tiers.
-- An automated trading journal.
 - Faster access to deposited funds, subject to [PARTNER]'s credit policy.
-- Optional seasonal challenges ranked on discipline metrics, not returns, with no cash prizes.
+- Pro changes tools and fees only. It never changes a customer's risk limits, stops or approvals.
 
 ---
 
@@ -189,6 +191,8 @@ Trading Simplified gives a regulated partner a ready-to-integrate onboarding cha
 | "Competitive seasonal ladders" | Challenges ranked on discipline, not returns, no cash prizes | Return-based leaderboards are a common gamification finding. |
 | Tier C "Unlimited Stake" | 25% Smart Stake applies at every tier | Resolves the contradiction with Section 5 (confirm this is your intent). |
 | Stock ticket; "no order may exceed 25%" | SPY options via the Probability Slider; Smart Stake limits *new* risk, and closing is never blocked | A literal 25% cap on every order could stop a customer from closing a position, which increases risk. |
+| Discipline "record" (unscored) | Discipline Score 0–100; margin graduation needs a score above 85 | A single visible number makes the requirement clear and auditable. |
+| No stop-loss | Mandatory, system-enforced stop on every options trade, tied to the slider | Caps typical losses below the maximum; disclosed as not guaranteed. |
 | Kill switch described, trigger unspecified | Automatic, not customer-controlled; resumes after 5 healthy seconds | A safety control the customer can toggle invites misuse and questions; a resume rule prevents flicker. |
 | "Backend buys the play" / tokenized positions (considered) | The customer's own order through [PARTNER]; no tokens | A token representing an option is still a security, and holding the options for customers would make us a custodian and counterparty. |
 | "Turnkey Acquisition Target" | "Strategic Partnership Candidate"; licensing, revenue share, or acquisition | Opens more deal paths and reads less like a sale pitch in a first meeting. |

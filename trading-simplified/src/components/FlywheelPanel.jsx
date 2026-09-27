@@ -1,5 +1,5 @@
 import { Check, Circle, Loader2, Lock, X } from 'lucide-react';
-import { TIERS, fmtUSD, smartStakeCap } from '../data/mock.js';
+import { DISCIPLINE_THRESHOLD, TIERS, fmtUSD, scoreLabel, smartStakeCap } from '../data/mock.js';
 
 export default function FlywheelPanel({
   open,
@@ -18,11 +18,12 @@ export default function FlywheelPanel({
   setSlowLink,
   killSwitch,
   latency,
+  score,
 }) {
   if (!open) return null;
   const idx = TIERS.findIndex((t) => t.id === tier.id);
   const next = TIERS[idx + 1];
-  const auditPass = audit.every((d) => d.pass);
+  const auditPass = score > DISCIPLINE_THRESHOLD;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="path-title">
@@ -55,7 +56,7 @@ export default function FlywheelPanel({
               <h3 className="font-display text-lg font-semibold text-ink">To reach {next.name}</h3>
               <ol className="mt-4 space-y-4">
                 <Step done={balanceQualifies} title={`Grow your balance to ${fmtUSD(next.min, 0)}`} detail={balanceQualifies ? 'Done' : `${fmtUSD(next.min - balance)} to go`} />
-                <Step done={auditPass} title="Pass the discipline check" detail={auditPass ? 'Done' : 'One item needs work, see below'} />
+                <Step done={auditPass} title={`Discipline Score above ${DISCIPLINE_THRESHOLD}`} detail={auditPass ? `Done: ${score}/100` : `Now ${score}/100. See what to improve below.`} />
                 <Step done={false} pending={approvalPending} title={`${next.margin && !tier.margin ? 'Margin' : 'The upgrade'} is approved by [PARTNER]`} detail={approvalPending ? 'In review' : 'Last step'} />
               </ol>
               <button
@@ -72,7 +73,9 @@ export default function FlywheelPanel({
           {/* Discipline check */}
           <section>
             <div className="flex items-baseline justify-between">
-              <h3 className="font-display text-lg font-semibold text-ink">Discipline check</h3>
+              <h3 className="font-display text-lg font-semibold text-ink">
+                Discipline Score: {score}/100, {scoreLabel(score)}
+              </h3>
               <span className="text-sm text-ink-3">Last 30 days</span>
             </div>
             <ul className="mt-3 divide-y divide-line">
