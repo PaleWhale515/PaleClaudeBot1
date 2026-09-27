@@ -9,7 +9,7 @@ const CHANNELS = [
   },
   {
     name: 'Trade',
-    body: 'Stocks and options with plain-language market context (IV Rank, expected move, probability of profit) beside a simple limit-order ticket.',
+    body: 'SPY options chosen by probability. Pick up, down or stay in range, an expiration, and your chance of profit; the Probability Slider picks the strikes and shows what you could make and lose.',
   },
   {
     name: 'Graduate',
@@ -18,16 +18,16 @@ const CHANNELS = [
 ];
 
 const CONTROLS = [
-  { title: 'Smart Stake', body: `No order above ${SMART_STAKE_PCT * 100}% of the balance or the tier limit ever leaves the platform.` },
-  { title: 'Safe-State switch', body: `Trading pauses if the partner's execution API is slower than ${KILL_SWITCH_MS} ms. Prices stay live.` },
+  { title: 'Smart Stake', body: `No order can put more than ${SMART_STAKE_PCT * 100}% of the balance, or the tier limit, at risk. Closing a position is never blocked.` },
+  { title: 'Safe-State', body: `Trading pauses automatically if the partner's execution API is slower than ${KILL_SWITCH_MS} ms, and resumes once it recovers.` },
   { title: 'Partner approval', body: 'Margin and options approval stays with the partner, under FINRA Rules 4210 and 2360.' },
 ];
 
 const STEPS = [
   { title: 'Make a prediction', body: 'On Predict, tap Up or Down. Note the fixed stake and fee.' },
-  { title: 'Hit the risk limit', body: 'On Trade, add shares until Smart Stake stops the order.' },
-  { title: 'Pause trading', body: 'Turn on the Safe-State switch in the header.' },
-  { title: 'Graduate a user', body: 'Open your balance, choose $2,450 and submit for approval.' },
+  { title: 'Use the Probability Slider', body: 'On Trade, apply for options, then slide from 1% to 99% and watch the payout and risk trade places.' },
+  { title: 'Watch Safe-State trip', body: 'In Your path, simulate a slow connection. Trading pauses on its own.' },
+  { title: 'Graduate to spreads', body: 'Open your balance, choose $2,450 and submit for approval. The 50–99% side unlocks.' },
 ];
 
 export default function IntroScreen({ onEnter }) {
@@ -96,7 +96,7 @@ export default function IntroScreen({ onEnter }) {
                       <td className="whitespace-nowrap py-3 pr-4 num">{t.range}</td>
                       <td className="py-3 pr-4 text-right num">{fmtUSD(t.predictStake, 0)}</td>
                       <td className="whitespace-nowrap py-3 pr-4 text-right num">{t.maxStake ? fmtUSD(t.maxStake, 0) : 'Partner-set'}</td>
-                      <td className="py-3 text-ink-2">{t.margin ? 'Margin, once approved' : 'Cash only'}</td>
+                      <td className="py-3 text-ink-2">{t.margin ? 'Margin and spreads, once approved' : 'Cash; buy calls and puts'}</td>
                     </tr>
                   ))}
                 </tbody>

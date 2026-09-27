@@ -14,6 +14,10 @@ export default function FlywheelPanel({
   eligible,
   approvalPending,
   onRequestUpgrade,
+  slowLink,
+  setSlowLink,
+  killSwitch,
+  latency,
 }) {
   if (!open) return null;
   const idx = TIERS.findIndex((t) => t.id === tier.id);
@@ -134,7 +138,7 @@ export default function FlywheelPanel({
             <input
               id="demo-balance"
               type="range"
-              min={100}
+              min={10}
               max={15000}
               step={10}
               value={Math.min(15000, Math.round(balance))}
@@ -156,6 +160,15 @@ export default function FlywheelPanel({
             <label className="mt-4 flex cursor-pointer items-center justify-between gap-3 border-t border-line pt-4 text-sm text-ink">
               Simulate a discipline gap
               <input id="demo-gap" type="checkbox" checked={disciplineGap} onChange={(e) => setDisciplineGap(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--brand))]" />
+            </label>
+            <label className="mt-3 flex cursor-pointer items-start justify-between gap-3 border-t border-line pt-4 text-sm text-ink">
+              <span>
+                Simulate a slow connection to [PARTNER]
+                <span className="block text-ink-3 num">
+                  {killSwitch ? `Safe-State tripped at ${latency} ms. It resumes after 5 healthy seconds.` : `Now ${latency} ms. Safe-State trips above 500 ms.`}
+                </span>
+              </span>
+              <input id="demo-slow" type="checkbox" checked={slowLink} onChange={(e) => setSlowLink(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[rgb(var(--brand))]" />
             </label>
           </section>
 

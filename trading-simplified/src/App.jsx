@@ -5,8 +5,23 @@ import TradeChannel from './components/TradeChannel.jsx';
 import FlywheelPanel from './components/FlywheelPanel.jsx';
 import Toasts from './components/Toasts.jsx';
 import IntroScreen from './components/IntroScreen.jsx';
-import { KILL_SWITCH_MS, PREDICT_FEE_PER_CONTRACT, STARTING_BALANCE, TIERS, TRADE_SYMBOLS, disciplineAudit, fmtNum, fmtUSD, liveMark, tierFor } from './data/mock.js';
-import { applyFill } from './data/positions.js';
+import {
+  KILL_SWITCH_MS,
+  PREDICT_FEE_PER_CONTRACT,
+  RESUME_AFTER_MS,
+  RESUME_BELOW_MS,
+  STARTING_BALANCE,
+  TIERS,
+  TRADE_SYMBOLS,
+  disciplineAudit,
+  fmtUSD,
+  liveMark,
+  smartStakeCap,
+  tierFor,
+} from './data/mock.js';
+import { markLegs, mirrorOf, tradeName } from './data/options.js';
+
+const SPY_IV = TRADE_SYMBOLS.find((s) => s.symbol === 'SPY').iv / 100;
 
 const INTRO_KEY = 'ts-intro-seen';
 
@@ -47,7 +62,12 @@ export default function App() {
   const [introOpen, setIntroOpen] = useState(shouldShowIntro);
   const [positions, setPositions] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [holdings, setHoldings] = useState({});
+  const [optPositions, setOptPositions] = useState([]);
+  const [optionsApproved, setOptionsApproved] = useState(false);
+  const [optionsPending, setOptionsPending] = useState(false);
+  const [exits, setExits] = useState({ opened: 0, planned: 0 });
+  const [slowLink, setSlowLink] = useState(false);
+  const healthySince = useRef(null);
   const [toasts, setToasts] = useState([]);
   const [latency, setLatency] = useState(18);
   const [theme, setTheme] = useState(initialTheme);
@@ -71,7 +91,7 @@ export default function App() {
   const approvedIdx = TIERS.findIndex((t) => t.id === approvedTierId);
   const tier = TIERS[Math.min(balanceIdx, approvedIdx)];
   const tierIdx = TIERS.indexOf(tier);
-  const audit = disciplineAudit(disciplineGap);
+  const audit = disciplineAudit(disciplineGap, exits);
   const disciplinePass = audit.every((a) => a.pass);
   const nextTier = TIERS[tierIdx + 1];
   const balanceQualifies = balanceIdx > tierIdx;
@@ -101,13 +121,36 @@ export default function App() {
     }
   };
 
-  // mock latency feed; spikes while the kill switch is engaged
+  // Mock feed of the partner's execution-API latency. "Simulate slow connection" (a demo
+  // control, not a customer control) makes it degrade.
   useEffect(() => {
     const t = setInterval(() => {
-      setLatency(killSwitch ? 620 + Math.round(Math.random() * 400) : 12 + Math.round(Math.random() * 14));
-    }, 1200);
+      setLatency(slowLink ? 620 + Math.round(Math.random() * 400) : 12 + Math.round(Math.random() * 14));
+    }, 1000);
     return () => clearInterval(t);
-  }, [killSwitch]);
+  }, [slowLink]);
+
+  // Safe-State is automatic: it trips as soon as latency passes the limit, and resumes only
+  // after the connection has stayed healthy for a while, so it can't flicker on and off.
+  useEffect(() => {
+    if (latency > KILL_SWITCH_MS) {
+      healthySince.current = null;
+      if (!killSwitch) {
+        setKillSwitch(true);
+        notify({ kind: 'warning', title: 'Trading paused automatically', body: `The connection to [PARTNER] is slower than ${KILL_SWITCH_MS} ms. No orders are sent until it recovers.` });
+      }
+    } else if (killSwitch) {
+      if (latency >= RESUME_BELOW_MS) {
+        healthySince.current = null;
+      } else if (healthySince.current == null) {
+        healthySince.current = Date.now();
+      } else if (Date.now() - healthySince.current >= RESUME_AFTER_MS) {
+        healthySince.current = null;
+        setKillSwitch(false);
+        notify({ kind: 'success', title: 'Trading resumed', body: 'The connection is healthy again. Orders are being sent.' });
+      }
+    }
+  }, [latency, killSwitch, notify]);
 
   // announce tier changes
   useEffect(() => {
@@ -143,14 +186,15 @@ export default function App() {
     }, 1800);
   };
 
-  const toggleKill = () => {
-    const next = !killSwitch;
-    setKillSwitch(next);
-    notify(
-      next
-        ? { kind: 'warning', title: 'Trading paused', body: `Execution is slower than ${KILL_SWITCH_MS} ms. The app is in view-only mode.` }
-        : { kind: 'success', title: 'Trading resumed', body: 'Orders are being sent again.' },
-    );
+  const applyOptions = () => {
+    if (optionsApproved || optionsPending) return;
+    setOptionsPending(true);
+    notify({ kind: 'info', title: 'Options application sent', body: '[PARTNER] is reviewing it.' });
+    setTimeout(() => {
+      setOptionsPending(false);
+      setOptionsApproved(true);
+      notify({ kind: 'success', title: 'Options trading approved', body: tier.margin ? 'The whole slider is open to you.' : 'You can buy calls and puts. Spreads unlock at Tier B.' });
+    }, 1800);
   };
 
   const enterFromIntro = (startChannel) => {
@@ -165,7 +209,7 @@ export default function App() {
   };
 
   const handlePredict = ({ market, side, price, stake }) => {
-    if (killSwitch) return;
+    if (killSwitch || stake > smartStakeCap(balance, tier)) return;
     const fee = Math.floor(stake / price) * PREDICT_FEE_PER_CONTRACT;
     setBalance((b) => b - stake - fee);
     setPositions((p) => [
@@ -179,83 +223,65 @@ export default function App() {
     });
   };
 
-  // Mock execution: orders fill immediately at their price. Realized P&L moves the balance.
-  const markOf = (symbol) => marks[symbol];
-  const fill = (book, o) => {
-    const { holdings: next, realized } = applyFill(book, o.symbol, o.side === 'BUY' ? o.qty : -o.qty, o.limit);
-    return { next, realized, record: { ...o, id: `${Date.now()}-${o.symbol}-${Math.random().toString(36).slice(2, 6)}`, time: now(), realized } };
-  };
-  const fmtSigned = (n) => `${n < 0 ? '−' : '+'}${fmtUSD(Math.abs(n))}`;
+  // ---- Options (Trade channel). Mock execution: orders fill at mid right away; realized P&L moves the balance.
+  const spot = marks.SPY;
+  const signed = (n) => `${n < 0 ? '−' : '+'}${fmtUSD(Math.abs(n))}`;
+  const premium = (cost) => `${fmtUSD(Math.abs(cost))} ${cost < 0 ? 'credit' : 'debit'}`;
+  const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-  const handleOrder = (o) => {
+  const openRecord = (trade, contracts) => ({ id: newId(), time: now(), action: trade.cost < 0 ? 'Sell' : 'Buy', name: tradeName(trade), contracts, price: trade.cost, realized: null });
+
+  const handleOpen = ({ trade, contracts, exitPlan }) => {
     if (killSwitch) return;
-    const { next, realized, record } = fill(holdings, o);
-    setHoldings(next);
-    setBalance((b) => b + realized);
-    setOrders((list) => [record, ...list]);
+    setOptPositions((list) => [{ id: newId(), trade, contracts, exitPlan }, ...list]);
+    setOrders((list) => [openRecord(trade, contracts), ...list]);
+    setExits((e) => ({ opened: e.opened + 1, planned: e.planned + (exitPlan ? 1 : 0) }));
     notify({
       kind: 'success',
-      title: `Filled: ${o.side === 'BUY' ? 'bought' : 'sold'} ${+o.qty.toFixed(3)} ${o.symbol}`,
-      body: `At ${fmtNum(o.limit)}, about ${fmtUSD(o.notional)}.${realized ? ` Realized ${fmtSigned(realized)}.` : ''}`,
+      title: `Filled: ${trade.cost < 0 ? 'sold' : 'bought'} ${contracts} ${trade.kind.toLowerCase()}${contracts > 1 ? 's' : ''}`,
+      body: `${tradeName(trade)} at ${premium(trade.cost)}. The options are in your account at [PARTNER].`,
     });
   };
 
-  const handleReverse = (symbol) => {
-    const h = holdings[symbol];
-    if (killSwitch || !h) return;
-    const mark = markOf(symbol);
-    const qty = Math.abs(h.qty) * 2;
-    const { next, realized, record } = fill(holdings, { side: h.qty > 0 ? 'SELL' : 'BUY', symbol, qty, limit: mark, notional: qty * mark, margin: true, note: 'Reverse' });
-    setHoldings(next);
-    setBalance((b) => b + realized);
-    setOrders((list) => [record, ...list]);
-    notify({
-      kind: 'success',
-      title: `Reversed ${symbol}`,
-      body: `Now ${next[symbol].qty > 0 ? 'long' : 'short'} ${+Math.abs(next[symbol].qty).toFixed(3)} shares at ${fmtNum(mark)}. Realized ${fmtSigned(realized)}.`,
-    });
-  };
-
-  // Sells or covers the given symbols at the current price. Returns the total realized P&L.
-  const closeSymbols = (symbols, note) => {
-    let book = holdings;
+  // Closes the given positions at the current price. Returns the total realized P&L.
+  const closePositions = (ids, action) => {
     let total = 0;
     const records = [];
-    for (const symbol of symbols) {
-      const h = book[symbol];
-      if (!h) continue;
-      const mark = markOf(symbol);
-      const qty = Math.abs(h.qty);
-      const res = fill(book, { side: h.qty > 0 ? 'SELL' : 'BUY', symbol, qty, limit: mark, notional: qty * mark, margin: h.qty < 0, note });
-      book = res.next;
-      total += res.realized;
-      records.push(res.record);
+    for (const p of optPositions.filter((x) => ids.includes(x.id))) {
+      const value = markLegs(p.trade.legs, spot, p.trade.days, SPY_IV);
+      const realized = (value - p.trade.cost) * 100 * p.contracts;
+      total += realized;
+      records.push({ id: newId(), time: now(), action, name: tradeName(p.trade), contracts: p.contracts, price: value, realized });
     }
-    setHoldings(book);
+    setOptPositions((list) => list.filter((x) => !ids.includes(x.id)));
     setBalance((b) => b + total);
     setOrders((list) => [...records.reverse(), ...list]);
     return { total, count: records.length };
   };
 
-  const handleClose = (symbol) => {
-    const h = holdings[symbol];
-    if (killSwitch || !h) return;
-    const { total } = closeSymbols([symbol], 'Close');
-    notify({
-      kind: 'success',
-      title: `Closed ${symbol}`,
-      body: `${h.qty > 0 ? 'Sold' : 'Bought back'} ${+Math.abs(h.qty).toFixed(3)} shares at ${fmtNum(markOf(symbol))}. Realized ${fmtSigned(total)}.`,
-    });
+  const handleClose = (id) => {
+    const p = optPositions.find((x) => x.id === id);
+    if (killSwitch || !p) return;
+    const { total } = closePositions([id], 'Close');
+    notify({ kind: 'success', title: `Closed ${tradeName(p.trade)}`, body: `Realized ${signed(total)}.` });
   };
 
   const handleCloseAll = () => {
     if (killSwitch) return;
-    const { total, count } = closeSymbols(Object.keys(holdings), 'Close all');
-    notify({
-      kind: 'success',
-      title: `Closed ${count} position${count === 1 ? '' : 's'}`,
-      body: `Realized ${fmtSigned(total)} in total. You're now fully in cash.`,
-    });
+    const { total, count } = closePositions(optPositions.map((p) => p.id), 'Close all');
+    notify({ kind: 'success', title: `Closed ${count} position${count === 1 ? '' : 's'}`, body: `Realized ${signed(total)} in total.` });
+  };
+
+  // Reverse = close, then open the mirror trade (Up <-> Down) at the same chance, expiry and size.
+  const handleReverse = (id) => {
+    const p = optPositions.find((x) => x.id === id);
+    if (killSwitch || !p || p.trade.direction === 'range') return;
+    const mirror = mirrorOf(p.trade, spot, SPY_IV);
+    if ((mirror.spreadNeeded && !tier.margin) || mirror.maxLoss * p.contracts > smartStakeCap(balance, tier)) return;
+    const { total } = closePositions([id], 'Reverse');
+    setOptPositions((list) => [{ id: newId(), trade: mirror, contracts: p.contracts, exitPlan: p.exitPlan }, ...list]);
+    setOrders((list) => [openRecord(mirror, p.contracts), ...list]);
+    notify({ kind: 'success', title: `Reversed to ${mirror.direction === 'up' ? 'Up' : 'Down'}`, body: `Now holding ${tradeName(mirror)}. Realized ${signed(total)} on the old trade.` });
   };
 
   return (
@@ -266,7 +292,6 @@ export default function App() {
         channel={channel}
         onChannel={setChannel}
         killSwitch={killSwitch}
-        onKillSwitch={toggleKill}
         latency={latency}
         onOpenFlywheel={() => setFlywheelOpen(true)}
         eligibleFor={eligible ? nextTier : null}
@@ -276,9 +301,25 @@ export default function App() {
 
       <main className="mx-auto max-w-[1200px] px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
         {channel === 'predict' ? (
-          <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} positions={positions} onPredict={handlePredict} notify={notify} />
+          <PredictChannel killSwitch={killSwitch} balance={balance} tier={tier} cap={smartStakeCap(balance, tier)} positions={positions} onPredict={handlePredict} notify={notify} />
         ) : (
-          <TradeChannel killSwitch={killSwitch} balance={balance} tier={tier} nextTier={nextTier} orders={orders} holdings={holdings} marks={marks} onOrder={handleOrder} onReverse={handleReverse} onClose={handleClose} onCloseAll={handleCloseAll} onOpenPath={() => setFlywheelOpen(true)} notify={notify} />
+          <TradeChannel
+            killSwitch={killSwitch}
+            balance={balance}
+            tier={tier}
+            spot={spot}
+            optionsApproved={optionsApproved}
+            optionsPending={optionsPending}
+            onApplyOptions={applyOptions}
+            positions={optPositions}
+            orders={orders}
+            onOpen={handleOpen}
+            onClose={handleClose}
+            onCloseAll={handleCloseAll}
+            onReverse={handleReverse}
+            onOpenPath={() => setFlywheelOpen(true)}
+            notify={notify}
+          />
         )}
 
         <footer className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-ink-3 sm:flex-row sm:items-start sm:justify-between">
@@ -310,6 +351,10 @@ export default function App() {
         eligible={eligible}
         approvalPending={approvalPending}
         onRequestUpgrade={requestUpgrade}
+        slowLink={slowLink}
+        setSlowLink={setSlowLink}
+        killSwitch={killSwitch}
+        latency={latency}
       />
       {introOpen && <IntroScreen onEnter={enterFromIntro} />}
       <Toasts toasts={toasts} dismiss={dismiss} />

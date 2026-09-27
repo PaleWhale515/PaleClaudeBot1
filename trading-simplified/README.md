@@ -35,13 +35,14 @@ Type: **Bricolage Grotesque** for headlines and big numbers, **Figtree** for eve
 src/
   App.jsx                    global state: balance, tier, channel, kill switch, toasts
   data/mock.js               tiers, Smart Stake math, markets, symbols, formatters
-  data/positions.js          fills, average cost, new-risk math, reverse eligibility
+  data/options.js            SPY options engine: Black-Scholes pricing and Greeks, Probability Slider strike selection, payoffs
   components/
-    Header.jsx               logo, Predict/Trade switch, balance with Road to $2K, theme toggle, Safe-State switch
+    Header.jsx               logo, Predict/Trade switch, balance with Road to $2K, theme toggle, Safe-State status
     ChannelToggle.jsx        Predict / Trade segmented control
     Logo.jsx                 three-step mark and wordmark
     PredictChannel.jsx       Velocity Engine: live chart, UP/DOWN $20 stakes, Share to X
-    TradeChannel.jsx         Trade: price and chart, market context, positions (Reverse / Close / Close all), order history, order ticket
+    TradeChannel.jsx         Trade: SPY chart, market context, Probability Slider ticket (Simplified / Pro), options positions, order history
+    PayoffChart.jsx          profit or loss at expiration by SPY price
     FlywheelPanel.jsx        "Your path" drawer: next-tier checklist, discipline check, tiers, demo controls
     PriceChart.jsx           dependency-free SVG chart with crosshair tooltip
     IntroScreen.jsx          partner-facing overview shown on first visit
@@ -51,13 +52,14 @@ src/
 ## Demo script
 
 1. **PREDICT:** pick a market and tap **UP** or **DOWN**. The tier's stake ($20 at Tier A, $100 at Tier B) plus a disclosed $0.01-per-contract fee comes off the balance. The panel shows that every position is routed through the partner to the exchange and centrally cleared. The share button opens an X post containing market data only, with a risk disclosure.
-2. **TRADE:** add shares until the **Smart Stake** meter turns red. It caps the *new risk* an order adds at 25% of the balance or the tier's per-order limit, whichever is lower. Closing or reducing a position is never capped. Use **Clamp**, then submit. In the demo, orders fill right away and prices drift gently, so positions show live P&L.
-   - **Reverse position** (on each row of *Your positions*) flips long to short, or short to long, after an inline confirmation. Going short needs a margin account, so on Tier A (or before the partner approves Tier B) clicking it explains why and offers **See how to unlock margin**. It also explains when the flipped position would exceed the Smart Stake limit.
-   - **Close** (on each row) sells or buys back just that position after a confirmation that shows the P&L you'd realize.
-   - **Close all positions** sells or covers everything at the current price, after a confirmation step, and adds the realized P&L to the balance.
-   - On a cash account, the ticket won't sell more shares than you own (no short sales without margin).
-   - **Copy cost basis (CSV)** copies the order history for tax reporting.
-3. **Kill switch:** turn it on in the header. A red View-Only banner appears, execution-API latency jumps above the 500 ms trip point, and every execution button is grayed out.
+2. **TRADE (SPY options, the Probability Slider):**
+   - Apply for options trading (tick the options risk disclosure, then submit). Approval takes a moment.
+   - Pick **Up**, **Down** or **Stay in range**, an expiration from today (0DTE) to 1 year, and an estimated chance of profit from 1% to 99%. The engine picks the strikes: below 50% it buys a call, put or butterfly; from 50% up it sells a put spread, call spread or iron condor.
+   - "You could make" and "You could lose" always show side by side, with a payoff chart. **Pro** adds legs, spread width, IV and Greeks.
+   - On Tier A only single calls and puts are allowed; the 50–99% side (spreads) unlocks at Tier B. Smart Stake caps each trade's maximum loss.
+   - Positions support **Reverse position** (Up ↔ Down at the same chance and expiry; in-range trades can't be reversed), **Close**, and **Close all positions**, each with a confirmation.
+   - **Copy cost basis (CSV)** copies order history with realized gains and losses.
+3. **Safe-State (automatic):** open **Your path** and tick **Simulate a slow connection**. Latency jumps above 500 ms, trading pauses on its own, and the header shows "Trading paused". Untick it: trading resumes after 5 healthy seconds. Customers never see a switch.
 4. **Graduation (balance + discipline + partner approval):**
    - Click the balance in the header to open **Your path**, then pick the **$2,450** preset. The balance qualifies, but the tier **does not change**.
    - Tick **Simulate a discipline gap** to show that balance alone is not enough: the submit button stays locked.
@@ -68,10 +70,10 @@ src/
 
 | Tier | Account value | Predict stake | Max per order | Access |
 |---|---|---|---|---|
-| A | < $2,000 | $20 | $500 | Cash account only (T+1) |
-| B | $2,000 – $9,999 | $100 | $2,500 | Margin eligible, partner approval |
+| A | < $2,000 | $20 | $500 | Cash account; buy single calls and puts once options are approved |
+| B | $2,000 – $9,999 | $100 | $2,500 | Margin and spreads, partner approval |
 | C | $10,000+ | $500 *(placeholder for [TIER C LIMITS])* | Partner-defined | Expanded limits, partner approval |
 
-The 25% Smart Stake cap applies at every tier. A user's effective tier is the lower of what the partner approved and what their balance supports. `[PARTNER]` appears in the UI wherever the production partner's name belongs.
+The 25% Smart Stake cap applies at every tier, to predictions and options alike. It limits *new* risk (an option trade's maximum loss); closing a position is never blocked. A user's effective tier is the lower of what the partner approved and what their balance supports. `[PARTNER]` appears in the UI wherever the production partner's name belongs.
 
 Margin approval in a live account is the partner's decision under FINRA Rule 4210 ($2,000 minimum equity) and Rule 2360 (options). Check current FINRA, SEC, and CFTC rules before any live build.

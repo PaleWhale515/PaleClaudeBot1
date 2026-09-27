@@ -26,7 +26,7 @@ Classification: Confidential — Proprietary Software Platform / Strategic Partn
 
 Trading Simplified is an API-first software platform that helps a regulated partner bring new retail investors on board and move them, step by step, toward more advanced products.
 
-New users start with small, fixed-risk index event contracts and cash-only stock trading. As their account grows and their trading record shows consistent risk management, the platform recommends them to the partner for expanded access, including margin. The partner keeps custody, the customer account, and every account-approval decision. Trading Simplified provides the interface, the pre-trade risk controls, and the graduation engine.
+New users start with small, fixed-risk index event contracts, then SPY options chosen by probability rather than by strike. As their account grows and their trading record shows consistent risk management, the platform recommends them to the partner for expanded access, including margin. The partner keeps custody, the customer account, and every account-approval decision. Trading Simplified provides the interface, the pre-trade risk controls, and the graduation engine.
 
 ## 2. The Market Gap
 
@@ -41,10 +41,25 @@ Trading Simplified fills that gap with a risk-first onboarding path. Position li
 - Users take positions in exchange-listed index event contracts [e.g., CME Group event contracts]. Every position has a fixed maximum loss that the user sees before confirming: $20 at Tier A, $100 at Tier B.
 - **Exchange execution:** Each user position is a real order. It is routed through [PARTNER] to the listing exchange and centrally cleared. Trading Simplified does not take the other side of user positions and does not run an internal or synthetic book.
 
-**TRADE Channel — stocks and options**
+**TRADE Channel — SPY options through the Probability Slider**
 
-- Charting plus a Mechanical Data Dashboard showing IV Rank, Expected Move, and Probability of Profit. These metrics are displayed as market context. They are not recommendations to buy or sell.
-- **Execution:** Orders are routed through [PARTNER], which is responsible for execution quality, clearing, and settlement.
+Instead of an options chain, the user answers three questions and the platform picks the strikes mechanically:
+
+1. **Direction:** Up, Down, or Stay in range.
+2. **Expiration:** from same-day (0DTE) to one year.
+3. **Estimated chance of profit:** a slider from 1% to 99%.
+
+| Slider | Up | Down | Stay in range | Account needed |
+|---|---|---|---|---|
+| 1–49% (bigger payout, lower chance) | Buy a call | Buy a put | Buy a butterfly | Options approval. Single calls and puts work in a cash account; the butterfly is a spread and needs margin. |
+| 50–99% (higher chance, smaller payout) | Sell a put credit spread | Sell a call credit spread | Sell an iron condor | Options and spread approval, plus a margin account (Tier B and up) |
+
+- **Always defined risk.** Every trade the slider can build has a fixed, known maximum loss. It never sells uncovered options.
+- **Honest trade-off.** The ticket always shows "You could make" and "You could lose" side by side, at equal size. A higher chance of profit always means a smaller payout for the risk. Chance of profit is an estimate from option prices, not a guarantee, and it is never called a "win probability".
+- **Simplified and Pro views.** Simplified shows the plain-language trade, payouts, breakevens and a payoff chart. Pro adds the exact legs, spread width, implied volatility, and position Greeks (delta, gamma, theta, vega). Both views keep every safeguard.
+- **Market context.** The Mechanical Data Dashboard shows IV Rank, the expected move by expiration, and the estimated chance of profit. These are context, not recommendations.
+- **Execution:** Each trade is sent to [PARTNER] as one order, and the options sit in the customer's own account. That is the 1:1 purchase: the customer owns the real contracts. Trading Simplified does not buy options for its own account or issue tokens that represent them, which would make it a custodian and the customer's counterparty. [PARTNER] is responsible for execution quality, clearing and settlement.
+- **Disclosures.** SPY options can be exercised early, and each contract covers 100 shares. Customers acknowledge *Characteristics and Risks of Standardized Options* before their options application is sent.
 
 ## 4. Graduated Access (The Graduation Flywheel)
 
@@ -52,11 +67,11 @@ Access expands as a user's account grows **and** their trading record shows disc
 
 | Tier | Account value | Predict stake | Max per order | Access |
 |---|---|---|---|---|
-| A | Under $2,000 | $20 | $500 | Cash account only (T+1 settlement) |
-| B | $2,000 – $9,999 | $100 | $2,500 | Margin eligible, subject to partner approval |
+| A | Under $2,000 | $20 | $500 | Cash account; buy single calls and puts once options are approved |
+| B | $2,000 – $9,999 | $100 | $2,500 | Margin and spreads (the 50–99% side of the slider), subject to partner approval |
 | C | $10,000+ | [TIER C LIMITS] | Partner-defined | Expanded limits, subject to partner approval |
 
-At every tier, no single order may exceed 25% of account equity (the Smart Stake limit, Section 5).
+At every tier, no single order may put more than 25% of account equity at risk (the Smart Stake limit, Section 5).
 
 **How graduation works.** The graduation engine reviews two things:
 
@@ -71,13 +86,15 @@ When a user qualifies, the engine **recommends** them to [PARTNER] for the next 
 
 **Pre-trade risk controls ("Smart Stake").**
 
-- No order may exceed 25% of account equity or the user's tier limit, whichever is lower.
+- No order may add new risk greater than 25% of account equity or the user's tier limit, whichever is lower. For an options trade, the risk is its maximum loss. For a prediction, it is the stake.
+- Orders that close or reduce a position add no new risk, so they are never blocked by this limit. Reversing a position counts the new, opposite position as new risk.
 - Orders that exceed the limit are rejected before they leave the platform and are never sent to [PARTNER] or the exchange.
 - These controls are designed to complement [PARTNER]'s own pre-trade controls under SEC Rule 15c3-5 (the Market Access Rule).
 
 **Safe-State kill switch.**
 
-- If response time from [PARTNER]'s execution API exceeds 500 ms, the platform stops sending orders and switches to view-only mode. Market data stays available.
+- The switch is automatic; customers cannot turn it on or off. If response time from [PARTNER]'s execution API exceeds 500 ms, the platform stops sending orders, including orders that close positions, and switches to view-only mode. Market data stays available.
+- Trading resumes on its own only after latency has stayed under 200 ms for 5 seconds, so the switch cannot flicker on and off. Customers see the status ("Live" or "Trading paused") and are notified when it changes.
 - This protects users from executing at stale prices and protects [PARTNER] from orders it cannot risk-check in time.
 
 **Margin events.** If a margin account falls below its maintenance requirement, [PARTNER] handles calls and any liquidation under its disclosed margin policy. Trading Simplified notifies the user in-app as early as possible.
@@ -140,8 +157,9 @@ Retail platforms today tend to fall into two groups. Legacy interfaces turn away
 
 - **Real exchange execution:** Every PREDICT position is a real order on a regulated exchange, routed through our partner and centrally cleared. There is no synthetic betting book.
 - **Graduated access:** The "Road to $2K" pipeline (Tiers A–C) expands access only as account value and trading discipline grow. The partner approves every margin upgrade.
-- **Built-in risk controls:** Non-custodial architecture, pre-trade Smart Stake limits, and a Safe-State kill switch that pauses order routing when execution latency exceeds 500 ms.
-- **Data-driven context:** The Mechanical Data Dashboard (IV Rank, Probability of Profit, Expected Move) gives users market context before every trade.
+- **Built-in risk controls:** Non-custodial architecture, pre-trade Smart Stake limits on new risk, and an automatic Safe-State kill switch that pauses order routing when execution latency exceeds 500 ms.
+- **The Probability Slider:** Customers choose SPY options by direction, expiration and estimated chance of profit (1–99%); the platform picks the strikes. Every trade is defined-risk, and the payout-versus-risk trade-off is always visible.
+- **Data-driven context:** The Mechanical Data Dashboard (IV Rank, estimated chance of profit, expected move) gives users market context before every trade.
 - **Organic growth:** Viral Pulse lets users share compliance-approved market snapshots (#TradingSimplified), adding a low-cost acquisition channel.
 
 ### Revenue
@@ -170,4 +188,7 @@ Trading Simplified gives a regulated partner a ready-to-integrate onboarding cha
 | "Instant deposit clearing" | Faster access to funds, subject to partner credit policy | Trading on unsettled deposits is a form of credit (Reg T). |
 | "Competitive seasonal ladders" | Challenges ranked on discipline, not returns, no cash prizes | Return-based leaderboards are a common gamification finding. |
 | Tier C "Unlimited Stake" | 25% Smart Stake applies at every tier | Resolves the contradiction with Section 5 (confirm this is your intent). |
+| Stock ticket; "no order may exceed 25%" | SPY options via the Probability Slider; Smart Stake limits *new* risk, and closing is never blocked | A literal 25% cap on every order could stop a customer from closing a position, which increases risk. |
+| Kill switch described, trigger unspecified | Automatic, not customer-controlled; resumes after 5 healthy seconds | A safety control the customer can toggle invites misuse and questions; a resume rule prevents flicker. |
+| "Backend buys the play" / tokenized positions (considered) | The customer's own order through [PARTNER]; no tokens | A token representing an option is still a security, and holding the options for customers would make us a custodian and counterparty. |
 | "Turnkey Acquisition Target" | "Strategic Partnership Candidate"; licensing, revenue share, or acquisition | Opens more deal paths and reads less like a sale pitch in a first meeting. |

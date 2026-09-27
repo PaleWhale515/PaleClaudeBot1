@@ -17,7 +17,7 @@ export const TIERS = [
     predictStake: 20,
     maxStake: 500,
     margin: false,
-    perks: ['Cash account, trades settle next business day', '$20 per prediction', 'Up to $500 per order'],
+    perks: ['Cash account', 'Buy single calls and puts, once options are approved', '$20 per prediction, up to $500 at risk per order'],
   },
   {
     id: 'B',
@@ -29,7 +29,7 @@ export const TIERS = [
     predictStake: 100,
     maxStake: 2500,
     margin: true,
-    perks: ['Margin, once the partner approves', '$100 per prediction', 'Up to $2,500 per order'],
+    perks: ['Margin, once the partner approves', 'Spreads and iron condors (the 50–99% side of the slider)', '$100 per prediction, up to $2,500 at risk per order'],
   },
   {
     id: 'C',
@@ -48,15 +48,24 @@ export const TIERS = [
 
 /** Partner execution-API latency above this trips the Safe-State kill switch. */
 export const KILL_SWITCH_MS = 500;
+/** Trading resumes only after latency stays under this for RESUME_AFTER_MS. */
+export const RESUME_BELOW_MS = 200;
+export const RESUME_AFTER_MS = 5000;
 
 /** Disclosed per-contract fee on PREDICT (mock). */
 export const PREDICT_FEE_PER_CONTRACT = 0.01;
 
-/** Mock discipline audit. `gap` simulates a user who fails one check. */
-export function disciplineAudit(gap = false) {
+/**
+ * Discipline audit. "Planned exit" is measured from real orders once the user has
+ * opened some (the exit-plan box on the ticket); before that it shows a mock history.
+ * `gap` simulates a user who fails that check.
+ */
+export function disciplineAudit(gap = false, exits = { opened: 0, planned: 0 }) {
+  const exitPct = exits.opened > 0 ? Math.round((exits.planned / exits.opened) * 100) : 92;
+  const exitPass = !gap && exitPct >= 80;
   return [
     { label: 'Stayed within Smart Stake limits', value: '100%', pass: true },
-    { label: 'Orders with a planned exit', value: gap ? '71%' : '92%', pass: !gap, need: 'Needs 80%' },
+    { label: 'Orders with a planned exit', value: gap ? '71%' : `${exitPct}%`, pass: exitPass, need: 'Needs 80%' },
     { label: 'Largest drop in 30 days', value: '−6.4%', pass: true, need: 'Limit 15%' },
     { label: 'Active trading days', value: '19 of 21', pass: true },
   ];

@@ -3,7 +3,7 @@ import Logo from './Logo.jsx';
 import ChannelToggle from './ChannelToggle.jsx';
 import { GRADUATION_TARGET, KILL_SWITCH_MS, fmtUSD } from '../data/mock.js';
 
-export default function Header({ balance, tier, channel, onChannel, killSwitch, onKillSwitch, latency, onOpenFlywheel, eligibleFor, theme, onToggleTheme }) {
+export default function Header({ balance, tier, channel, onChannel, killSwitch, latency, onOpenFlywheel, eligibleFor, theme, onToggleTheme }) {
   const progress = Math.min(100, (balance / GRADUATION_TARGET) * 100);
   const reached = balance >= GRADUATION_TARGET;
 
@@ -56,18 +56,16 @@ export default function Header({ balance, tier, channel, onChannel, killSwitch, 
             {theme === 'dark' ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
           </button>
 
-          <div className="flex items-center gap-2 rounded-full border border-line py-1 pl-3 pr-1" title={`Pauses order routing when execution latency is above ${KILL_SWITCH_MS} ms`}>
-            <span className="text-sm text-ink-2">Safe-State</span>
-            <span className={`hidden text-xs num sm:inline ${killSwitch ? 'text-down' : 'text-ink-3'}`}>{latency} ms</span>
-            <button
-              role="switch"
-              aria-checked={killSwitch}
-              aria-label="Safe-State kill switch"
-              onClick={onKillSwitch}
-              className={`relative h-6 w-10 rounded-full transition ${killSwitch ? 'bg-down' : 'bg-line'}`}
-            >
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-all ${killSwitch ? 'left-[18px]' : 'left-0.5'}`} />
-            </button>
+          {/* Safe-State is automatic; customers see its status, never a switch. */}
+          <div
+            role="status"
+            aria-live="polite"
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm ${killSwitch ? 'bg-down-soft text-down' : 'bg-up-soft text-up'}`}
+            title={`Trading pauses automatically if the connection to [PARTNER] is slower than ${KILL_SWITCH_MS} ms`}
+          >
+            <span className={`h-2 w-2 rounded-full ${killSwitch ? 'bg-down' : 'bg-up'}`} aria-hidden="true" />
+            <span className="font-medium">{killSwitch ? 'Trading paused' : 'Live'}</span>
+            <span className="hidden text-xs opacity-80 num sm:inline">{latency} ms</span>
           </div>
         </div>
       </div>
@@ -82,7 +80,7 @@ export default function Header({ balance, tier, channel, onChannel, killSwitch, 
             <PauseCircle className="mt-0.5 h-5 w-5 shrink-0 text-down" />
             <p className="text-sm text-ink">
               <span className="font-semibold text-down">API Latency: View-Only Mode.</span> The connection to [PARTNER] is slower than{' '}
-              {KILL_SWITCH_MS} ms, so trading is paused until it recovers. Prices are still live.
+              {KILL_SWITCH_MS} ms, so trading paused automatically. It resumes on its own once the connection is healthy again. Prices are still live.
             </p>
           </div>
         </div>

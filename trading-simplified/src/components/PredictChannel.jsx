@@ -5,7 +5,7 @@ import { PREDICT_FEE_PER_CONTRACT, PREDICT_MARKETS, fmtCountdown, fmtNum, fmtUSD
 
 const RANGES = ['1H', '1D', '5D'];
 
-export default function PredictChannel({ killSwitch, balance, tier, positions, onPredict, notify }) {
+export default function PredictChannel({ killSwitch, balance, tier, cap, positions, onPredict, notify }) {
   const stake = tier.predictStake;
   const [marketId, setMarketId] = useState(PREDICT_MARKETS[0].id);
   const [range, setRange] = useState('1D');
@@ -34,7 +34,9 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
   const downPrice = 1 - upPrice;
   const countdown = Math.max(0, market.expiresIn - tick);
   const insufficient = balance < stake;
-  const disabled = killSwitch || insufficient;
+  // Smart Stake applies to every order, predictions included (white paper §5).
+  const overCap = !insufficient && stake > cap;
+  const disabled = killSwitch || insufficient || overCap;
 
   const shareText = `Pulse Snapshot: ${market.title} The market says ${Math.round(upPrice * 100)}% up right now. #TradingSimplified\n\nMarket data only, not advice. Event contracts involve risk of loss.`;
   const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`;
@@ -135,6 +137,11 @@ export default function PredictChannel({ killSwitch, balance, tier, positions, o
           {killSwitch && <p className="mt-3 rounded-xl bg-down-soft px-4 py-3 text-sm text-down">Trading is paused. You can still watch prices.</p>}
           {!killSwitch && insufficient && (
             <p className="mt-3 rounded-xl bg-gold-soft px-4 py-3 text-sm text-gold-ink">You need at least {fmtUSD(stake, 0)} to make a prediction.</p>
+          )}
+          {!killSwitch && overCap && (
+            <p className="mt-3 rounded-xl bg-gold-soft px-4 py-3 text-sm text-gold-ink">
+              A {fmtUSD(stake, 0)} prediction is more than 25% of your balance, so Smart Stake holds it back until your balance is at least {fmtUSD(stake * 4, 0)}.
+            </p>
           )}
 
           <dl className="mt-5 space-y-2.5 border-t border-line pt-5 text-sm">
