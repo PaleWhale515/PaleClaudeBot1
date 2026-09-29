@@ -1,0 +1,13 @@
+{
+  "name": "wyrmhold",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply wyrmhold --local && wrangler dev",
+    "test": "node --test test/*.test.js",
+    "deploy": "wrangler d1 migrations apply wyrmhold --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.143.0"
+  }
+}
